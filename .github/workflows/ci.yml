@@ -72,6 +72,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Download dependencies
+      run: go mod download
+      env:
+        GOPRIVATE: github.com/Protobomb/*
+
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v3
       with:
