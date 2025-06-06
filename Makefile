@@ -1,11 +1,17 @@
-.PHONY: build run run-sse test clean install build-all docker docker-build docker-run docker-push docker-compose-up docker-compose-down fmt lint deps
+.PHONY: build run run-sse test clean install build-all build-release docker docker-build docker-run docker-push docker-compose-up docker-compose-down fmt lint deps
 
 # Binary name
 BINARY_NAME=mcp-server-devpod
 
+# Version (can be overridden)
+VERSION?=dev
+
+# Build flags
+LDFLAGS=-ldflags="-s -w -X main.version=$(VERSION)"
+
 # Build the binary
 build:
-	go build -o $(BINARY_NAME) main.go
+	go build $(LDFLAGS) -o $(BINARY_NAME) main.go
 
 # Run in STDIO mode
 run: build
@@ -30,15 +36,18 @@ install: build
 
 # Build for multiple platforms
 build-all:
-	GOOS=linux GOARCH=amd64 go build -o $(BINARY_NAME)-linux-amd64 main.go
-	GOOS=linux GOARCH=arm64 go build -o $(BINARY_NAME)-linux-arm64 main.go
-	GOOS=darwin GOARCH=amd64 go build -o $(BINARY_NAME)-darwin-amd64 main.go
-	GOOS=darwin GOARCH=arm64 go build -o $(BINARY_NAME)-darwin-arm64 main.go
-	GOOS=windows GOARCH=amd64 go build -o $(BINARY_NAME)-windows-amd64.exe main.go
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-amd64 main.go
+	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-arm64 main.go
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-amd64 main.go
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-arm64 main.go
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-windows-amd64.exe main.go
+
+# Build release with archives
+build-release:
+	./scripts/build-release.sh $(VERSION)
 
 # Docker commands
 DOCKER_IMAGE=ghcr.io/protobomb/mcp-server-devpod
-VERSION?=latest
 
 docker: docker-build
 

@@ -10,30 +10,8 @@ permissions:
   packages: write
 
 jobs:
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-
   build-binaries:
     name: Build Binaries
-    needs: release
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -56,7 +34,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.20'
 
     - name: Build binary
       env:
@@ -68,21 +46,76 @@ jobs:
           output_name="${output_name}.exe"
         fi
         go build -o "${output_name}" -ldflags="-s -w -X main.version=${{ github.ref_name }}" main.go
-        tar czf "${output_name}.tar.gz" "${output_name}" README.md LICENSE
+        
+        # Create archive with different formats for different platforms
+        if [ "${{ matrix.os }}" = "windows" ]; then
+          zip "${output_name}.zip" "${output_name}" README.md LICENSE
+        else
+          tar czf "${output_name}.tar.gz" "${output_name}" README.md LICENSE
+        fi
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
       with:
-        upload_url: ${{ needs.release.outputs.upload_url }}
-        asset_path: ./mcp-server-devpod-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
-        asset_name: mcp-server-devpod-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
-        asset_content_type: application/gzip
+        name: binary-${{ matrix.os }}-${{ matrix.arch }}
+        path: |
+          *.tar.gz
+          *.zip
+        retention-days: 1
+
+  create-release:
+    name: Create Release
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: Prepare release assets
+      run: |
+        mkdir -p ./release-assets
+        find ./artifacts -name "*.tar.gz" -o -name "*.zip" | xargs -I {} cp {} ./release-assets/
+        ls -la ./release-assets/
+
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        echo "## What's Changed" > release_notes.md
+        echo "" >> release_notes.md
+        echo "### 🚀 Features" >> release_notes.md
+        echo "- DevPod MCP Server release ${{ github.ref_name }}" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### 📦 Downloads" >> release_notes.md
+        echo "Choose the appropriate binary for your platform:" >> release_notes.md
+        echo "" >> release_notes.md
+        for file in ./release-assets/*; do
+          filename=$(basename "$file")
+          echo "- **$filename**" >> release_notes.md
+        done
+        echo "" >> release_notes.md
+        echo "### 🐳 Docker" >> release_notes.md
+        echo "\`\`\`bash" >> release_notes.md
+        echo "docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}" >> release_notes.md
+        echo "\`\`\`" >> release_notes.md
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ./release-assets/*
+        body_path: release_notes.md
+        draft: false
+        prerelease: ${{ contains(github.ref_name, '-') }}
+        generate_release_notes: true
 
   docker-release:
     name: Docker Release
-    needs: release
+    needs: create-release
     runs-on: ubuntu-latest
     
     steps:

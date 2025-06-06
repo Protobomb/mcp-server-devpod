@@ -1,0 +1,78 @@
+name: Manual Docker Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker tag to use (e.g., latest, v1.0.0, test)'
+        required: true
+        default: 'latest'
+      push:
+        description: 'Push to registry'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  docker-build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      if: ${{ inputs.push }}
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}
+        tags: |
+          type=raw,value=${{ inputs.tag }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: ${{ inputs.push }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Image details
+      run: |
+        echo "## Docker Image Built 🐳" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Image:** \`ghcr.io/${{ github.repository }}:${{ inputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ inputs.push }}" = "true" ]; then
+          echo "**Status:** ✅ Pushed to registry" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Usage:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/${{ github.repository }}:${{ inputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker run ghcr.io/${{ github.repository }}:${{ inputs.tag }} --version" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "**Status:** 🔨 Built locally only (not pushed)" >> $GITHUB_STEP_SUMMARY
+        fi

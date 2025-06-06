@@ -16,6 +16,9 @@ import (
 	"github.com/protobomb/mcp-server-framework/pkg/transport"
 )
 
+// version is set during build time via ldflags
+var version = "dev"
+
 // DevPodWorkspace represents a DevPod workspace
 type DevPodWorkspace struct {
 	Name     string `json:"name"`
@@ -36,8 +39,14 @@ func main() {
 	var (
 		transportType = flag.String("transport", "stdio", "Transport type: stdio or sse")
 		addr          = flag.String("addr", ":8080", "Address for SSE transport")
+		showVersion   = flag.Bool("version", false, "Show version information")
 	)
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("mcp-server-devpod version %s\n", version)
+		return
+	}
 
 	// Create transport
 	var t mcp.Transport
