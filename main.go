@@ -38,7 +38,7 @@ type DevPodProvider struct {
 func main() {
 	var (
 		transportType = flag.String("transport", "stdio", "Transport type: stdio or sse")
-		addr          = flag.String("addr", ":8080", "Address for SSE transport")
+		addr          = flag.String("addr", "8080", "Port for SSE transport")
 		showVersion   = flag.Bool("version", false, "Show version information")
 	)
 	flag.Parse()
@@ -54,7 +54,7 @@ func main() {
 	case "stdio":
 		t = transport.NewSTDIOTransport()
 	case "sse":
-		t = transport.NewSSETransport(*addr)
+		t = transport.NewSSETransport(":" + *addr)
 	default:
 		log.Fatalf("Unknown transport type: %s", *transportType)
 	}

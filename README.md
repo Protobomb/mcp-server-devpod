@@ -62,7 +62,7 @@ The container includes:
 ### SSE Mode
 
 ```bash
-./mcp-server-devpod -transport=sse -addr=:8080
+./mcp-server-devpod -transport=sse -addr=8080
 ```
 
 ### Environment Variables (Docker)

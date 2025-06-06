@@ -31,7 +31,7 @@ make build
 
 ### SSE mode
 ```bash
-./mcp-server-devpod -transport=sse -addr=:8080
+./mcp-server-devpod -transport=sse -addr=8080
 ```
 
 ## Integration with Claude Desktop
@@ -79,7 +79,7 @@ go build -o test_client test_client.go
 
 1. Start the server in SSE mode:
 ```bash
-./mcp-server-devpod -transport=sse -addr=:8080
+./mcp-server-devpod -transport=sse -addr=8080
 ```
 
 2. Initialize connection:

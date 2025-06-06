@@ -19,7 +19,7 @@ run: build
 
 # Run in SSE mode
 run-sse: build
-	./$(BINARY_NAME) -transport=sse -addr=:8080
+	./$(BINARY_NAME) -transport=sse -addr=8080
 
 # Run tests
 test:
