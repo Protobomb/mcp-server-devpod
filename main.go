@@ -62,9 +62,6 @@ func main() {
 	// Create server
 	server := mcp.NewServer(t)
 
-	// Register DevPod handlers
-	registerDevPodHandlers(server)
-
 	// Setup context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -79,10 +76,13 @@ func main() {
 		cancel()
 	}()
 
-	// Start server
+	// Start server (this registers default handlers)
 	if err := server.Start(ctx); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+
+	// Register DevPod handlers AFTER start to override defaults
+	registerDevPodHandlers(server)
 
 	log.Printf("DevPod MCP server started with %s transport", *transportType)
 	if *transportType == "sse" {
@@ -521,6 +521,46 @@ func registerDevPodHandlers(server *mcp.Server) {
 
 		return map[string]interface{}{
 			"tools": tools,
+		}, nil
+	})
+
+	// Custom tools/call handler to route tool calls to our DevPod handlers
+	server.RegisterHandler("tools/call", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		var callParams struct {
+			Name      string                 `json:"name"`
+			Arguments map[string]interface{} `json:"arguments"`
+		}
+
+		if err := json.Unmarshal(params, &callParams); err != nil {
+			return nil, mcp.NewInvalidParamsError("Invalid tool call parameters")
+		}
+
+		// Get the handler for this tool
+		handler := server.GetHandler(callParams.Name)
+		if handler == nil {
+			return nil, mcp.NewInvalidParamsError(fmt.Sprintf("Unknown tool: %s", callParams.Name))
+		}
+
+		// Convert arguments back to JSON for the handler
+		argsBytes, err := json.Marshal(callParams.Arguments)
+		if err != nil {
+			return nil, mcp.NewInvalidParamsError("Failed to marshal tool arguments")
+		}
+
+		// Call the handler
+		result, err := handler(ctx, argsBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		// Wrap the result in the expected ToolsCallResult format
+		return map[string]interface{}{
+			"content": []map[string]interface{}{
+				{
+					"type": "text",
+					"text": fmt.Sprintf("%v", result),
+				},
+			},
 		}, nil
 	})
 }
