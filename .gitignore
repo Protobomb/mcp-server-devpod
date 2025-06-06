@@ -1,6 +1,7 @@
 # Binaries
 mcp-server-devpod
 mcp-server-devpod-*
+test_client
 *.exe
 
 # Go build artifacts
