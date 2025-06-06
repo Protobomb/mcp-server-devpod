@@ -1,4 +1,4 @@
-.PHONY: build run run-sse test clean install
+.PHONY: build run run-sse test clean install build-all docker docker-build docker-run docker-push docker-compose-up docker-compose-down fmt lint deps
 
 # Binary name
 BINARY_NAME=mcp-server-devpod
@@ -31,8 +31,38 @@ install: build
 # Build for multiple platforms
 build-all:
 	GOOS=linux GOARCH=amd64 go build -o $(BINARY_NAME)-linux-amd64 main.go
+	GOOS=linux GOARCH=arm64 go build -o $(BINARY_NAME)-linux-arm64 main.go
 	GOOS=darwin GOARCH=amd64 go build -o $(BINARY_NAME)-darwin-amd64 main.go
+	GOOS=darwin GOARCH=arm64 go build -o $(BINARY_NAME)-darwin-arm64 main.go
 	GOOS=windows GOARCH=amd64 go build -o $(BINARY_NAME)-windows-amd64.exe main.go
+
+# Docker commands
+DOCKER_IMAGE=ghcr.io/protobomb/mcp-server-devpod
+VERSION?=latest
+
+docker: docker-build
+
+docker-build:
+	docker build -t $(DOCKER_IMAGE):$(VERSION) .
+
+docker-run:
+	docker run -d \
+		--name mcp-server-devpod \
+		-p 8080:8080 \
+		-v /var/run/docker.sock:/var/run/docker.sock:ro \
+		-v devpod-data:/home/mcp/.devpod \
+		-e MCP_TRANSPORT=sse \
+		-e DEVPOD_PROVIDER=docker \
+		$(DOCKER_IMAGE):$(VERSION)
+
+docker-push: docker-build
+	docker push $(DOCKER_IMAGE):$(VERSION)
+
+docker-compose-up:
+	docker-compose up -d
+
+docker-compose-down:
+	docker-compose down
 
 # Format code
 fmt:

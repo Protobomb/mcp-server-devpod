@@ -12,18 +12,44 @@ An MCP (Model Context Protocol) server that provides an interface to [DevPod](ht
 
 ## Prerequisites
 
-- [DevPod CLI](https://devpod.sh/docs/getting-started/install) installed and configured
+- [DevPod CLI](https://devpod.sh/docs/getting-started/install) installed and configured (included in Docker image)
 - Go 1.19 or later (for building from source)
+- Docker (for containerized deployment)
 
 ## Installation
 
-### From Source
+### Option 1: From Source
 
 ```bash
-git clone https://github.com/user/mcp-server-devpod.git
+git clone https://github.com/Protobomb/mcp-server-devpod.git
 cd mcp-server-devpod
 go build -o mcp-server-devpod
 ```
+
+### Option 2: Using Docker
+
+Run the server in a container with DevPod pre-installed:
+
+```bash
+# Using docker-compose
+docker-compose up -d
+
+# Or using docker directly
+docker run -d \
+  --name mcp-server-devpod \
+  -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -v devpod-data:/home/mcp/.devpod \
+  -e MCP_TRANSPORT=sse \
+  -e DEVPOD_PROVIDER=docker \
+  ghcr.io/protobomb/mcp-server-devpod:latest
+```
+
+The container includes:
+- Pre-installed DevPod client
+- SSE transport support for remote access
+- Configurable environment variables
+- Volume mounts for Docker socket and DevPod data persistence
 
 ## Usage
 
@@ -38,6 +64,16 @@ go build -o mcp-server-devpod
 ```bash
 ./mcp-server-devpod -transport=sse -addr=:8080
 ```
+
+### Environment Variables (Docker)
+
+When running in Docker, you can configure the server using these environment variables:
+
+- `MCP_TRANSPORT`: Transport type (`stdio` or `sse`, default: `sse`)
+- `MCP_ADDR`: Address for SSE server (default: `:8080`)
+- `DEVPOD_HOME`: DevPod home directory (default: `/home/mcp/.devpod`)
+- `DEVPOD_PROVIDER`: Default DevPod provider (default: `docker`)
+- `DEVPOD_DOCKER_HOST`: Docker host for DevPod (default: `unix:///var/run/docker.sock`)
 
 ## Available Tools
 
