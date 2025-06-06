@@ -1,7 +1,7 @@
-module github.com/user/mcp-server-devpod
+module github.com/Protobomb/mcp-server-devpod
 
 go 1.19
 
-replace github.com/openhands/mcp-server-framework => ../mcp-server-framework
+require github.com/openhands/mcp-server-framework v0.0.0-20250606131529-1b536a7bc1b2
 
-require github.com/openhands/mcp-server-framework v0.0.0-00010101000000-000000000000 // indirect
+replace github.com/openhands/mcp-server-framework => github.com/Protobomb/mcp-server-framework v0.0.0-20250606131529-1b536a7bc1b2

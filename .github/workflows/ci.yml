@@ -25,6 +25,11 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
 
+    - name: Configure git for private modules
+      run: git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -35,6 +40,8 @@ jobs:
 
     - name: Download dependencies
       run: go mod download
+      env:
+        GOPRIVATE: github.com/Protobomb/*
 
     - name: Run tests
       run: go test -v -race -coverprofile=coverage.out ./...
@@ -60,11 +67,18 @@ jobs:
       with:
         go-version: '1.21'
 
+    - name: Configure git for private modules
+      run: git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v3
       with:
         version: latest
         args: --timeout=5m
+      env:
+        GOPRIVATE: github.com/Protobomb/*
 
   build:
     name: Build
@@ -86,10 +100,16 @@ jobs:
       with:
         go-version: '1.21'
 
+    - name: Configure git for private modules
+      run: git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Build binary
       env:
         GOOS: ${{ matrix.os }}
         GOARCH: ${{ matrix.arch }}
+        GOPRIVATE: github.com/Protobomb/*
       run: |
         output_name="mcp-server-devpod-${{ matrix.os }}-${{ matrix.arch }}"
         if [ "${{ matrix.os }}" = "windows" ]; then
@@ -120,6 +140,8 @@ jobs:
         context: .
         push: false
         tags: mcp-server-devpod:test
+        build-args: |
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
