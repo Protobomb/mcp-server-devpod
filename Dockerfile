@@ -1,25 +1,14 @@
 # Build stage
 FROM golang:1.21-alpine AS builder
 
-# Build arguments for private repos
-ARG GITHUB_TOKEN
-
 # Install build dependencies
 RUN apk add --no-cache git make
-
-# Configure git for private modules if token is provided
-RUN if [ -n "$GITHUB_TOKEN" ]; then \
-    git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"; \
-    fi
 
 # Set working directory
 WORKDIR /build
 
 # Copy go mod files
 COPY go.mod go.sum ./
-
-# Set GOPRIVATE for private modules
-ENV GOPRIVATE=github.com/Protobomb/*
 
 # Download dependencies
 RUN go mod download
