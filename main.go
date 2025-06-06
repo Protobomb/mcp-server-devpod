@@ -12,8 +12,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/openhands/mcp-server-framework/pkg/mcp"
-	"github.com/openhands/mcp-server-framework/pkg/transport"
+	"github.com/protobomb/mcp-server-framework/pkg/mcp"
+	"github.com/protobomb/mcp-server-framework/pkg/transport"
 )
 
 // DevPodWorkspace represents a DevPod workspace
