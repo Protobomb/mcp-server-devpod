@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "devpod": {
+      "command": "/usr/local/bin/mcp-server-devpod",
+      "args": [],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,35 @@
+# Binaries
+mcp-server-devpod
+mcp-server-devpod-*
+*.exe
+
+# Go build artifacts
+*.o
+*.a
+*.so
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
