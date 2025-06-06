@@ -1,3 +1,6 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
@@ -8,8 +11,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/openhands/mcp-server-framework/pkg/client"
-	"github.com/openhands/mcp-server-framework/pkg/mcp"
+	"github.com/protobomb/mcp-server-framework/pkg/client"
+	"github.com/protobomb/mcp-server-framework/pkg/mcp"
 )
 
 func main() {

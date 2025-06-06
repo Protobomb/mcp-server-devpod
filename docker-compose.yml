@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  mcp-server-devpod:
+    build: .
+    image: mcp-server-devpod:latest
+    container_name: mcp-server-devpod
+    ports:
+      - "${MCP_PORT:-8080}:8080"
+    environment:
+      - MCP_TRANSPORT=sse
+      - MCP_ADDR=:8080
+      - DEVPOD_HOME=/home/mcp/.devpod
+      - DEVPOD_PROVIDER=${DEVPOD_PROVIDER:-docker}
+      - DEVPOD_DOCKER_HOST=${DEVPOD_DOCKER_HOST:-unix:///var/run/docker.sock}
+    volumes:
+      # Mount Docker socket for DevPod to create containers
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Persist DevPod data
+      - devpod-data:/home/mcp/.devpod
+      # Optional: Mount SSH keys for Git authentication
+      - ${SSH_KEY_PATH:-~/.ssh}:/home/mcp/.ssh:ro
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    labels:
+      - "com.mcp.server=devpod"
+      - "com.mcp.version=1.0.0"
+
+volumes:
+  devpod-data:
+    driver: local
+
+networks:
+  mcp-network:
+    driver: bridge

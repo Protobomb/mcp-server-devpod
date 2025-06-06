@@ -12,8 +12,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/openhands/mcp-server-framework/pkg/mcp"
-	"github.com/openhands/mcp-server-framework/pkg/transport"
+	"github.com/protobomb/mcp-server-framework/pkg/mcp"
+	"github.com/protobomb/mcp-server-framework/pkg/transport"
 )
 
 // DevPodWorkspace represents a DevPod workspace
@@ -529,8 +529,8 @@ func parseTextWorkspaceList(output string) map[string]interface{} {
 		if len(fields) >= 3 {
 			workspace := map[string]string{
 				"name":     fields[0],
-				"provider": fields[1],
-				"status":   fields[2],
+				"status":   fields[1],
+				"provider": fields[2],
 			}
 			if len(fields) > 3 {
 				workspace["ide"] = fields[3]
