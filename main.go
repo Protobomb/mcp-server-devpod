@@ -48,13 +48,24 @@ func main() {
 		return
 	}
 
+	// Format address for SSE transport
+	var formattedAddr string
+	if *transportType == "sse" {
+		// If addr doesn't start with ":", add it
+		if !strings.HasPrefix(*addr, ":") {
+			formattedAddr = ":" + *addr
+		} else {
+			formattedAddr = *addr
+		}
+	}
+
 	// Create transport
 	var t mcp.Transport
 	switch *transportType {
 	case "stdio":
 		t = transport.NewSTDIOTransport()
 	case "sse":
-		t = transport.NewSSETransport(":" + *addr)
+		t = transport.NewSSETransport(formattedAddr)
 	default:
 		log.Fatalf("Unknown transport type: %s", *transportType)
 	}
