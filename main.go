@@ -37,8 +37,8 @@ type DevPodProvider struct {
 
 func main() {
 	var (
-		transportType = flag.String("transport", "stdio", "Transport type: stdio or sse")
-		addr          = flag.String("addr", "8080", "Port for SSE transport")
+		transportType = flag.String("transport", "stdio", "Transport type: stdio, sse, or http-streams")
+		addr          = flag.String("addr", "8080", "Port for SSE and HTTP Streams transports")
 		showVersion   = flag.Bool("version", false, "Show version information")
 	)
 	flag.Parse()
@@ -48,9 +48,9 @@ func main() {
 		return
 	}
 
-	// Format address for SSE transport
+	// Format address for SSE and HTTP Streams transports
 	var formattedAddr string
-	if *transportType == "sse" {
+	if *transportType == "sse" || *transportType == "http-streams" {
 		// If addr doesn't start with ":", add it
 		if !strings.HasPrefix(*addr, ":") {
 			formattedAddr = ":" + *addr
@@ -66,12 +66,84 @@ func main() {
 		t = transport.NewSTDIOTransport()
 	case "sse":
 		t = transport.NewSSETransport(formattedAddr)
+	case "http-streams":
+		t = transport.NewHTTPStreamsTransport(formattedAddr)
 	default:
-		log.Fatalf("Unknown transport type: %s", *transportType)
+		log.Fatalf("Unknown transport type: %s (supported: stdio, sse, http-streams)", *transportType)
 	}
 
 	// Create server
 	server := mcp.NewServer(t)
+
+	// Register DevPod handlers BEFORE starting the server
+	registerDevPodHandlers(server)
+
+	// Create shared message handler for SSE and HTTP Streams transports
+	messageHandler := func(message []byte) ([]byte, error) {
+		// Create a temporary context for message processing
+		msgCtx := context.Background()
+
+		// Parse the JSON-RPC message to check if it's a request or notification
+		var request mcp.JSONRPCRequest
+		if err := json.Unmarshal(message, &request); err != nil {
+			return nil, fmt.Errorf("invalid JSON-RPC message: %w", err)
+		}
+
+		// Check if this is a notification (no ID field)
+		if request.ID == nil {
+			// This is a notification - handle it and don't send a response
+			if handler := server.GetNotificationHandler(request.Method); handler != nil {
+				if err := handler(msgCtx, request.Params); err != nil {
+					log.Printf("Error handling notification %s: %v", request.Method, err)
+				}
+			} else {
+				log.Printf("No handler for notification: %s", request.Method)
+			}
+			// Return nil for notifications (no response expected)
+			return nil, nil
+		}
+
+		// This is a request - handle it and send a response
+		response := mcp.JSONRPCResponse{
+			JSONRPC: mcp.JSONRPCVersion,
+			ID:      request.ID,
+		}
+
+		// Get the handler for this method
+		if handler := server.GetHandler(request.Method); handler != nil {
+			result, err := handler(msgCtx, request.Params)
+			if err != nil {
+				if rpcErr, ok := err.(*mcp.RPCError); ok {
+					response.Error = rpcErr
+				} else {
+					response.Error = &mcp.RPCError{
+						Code:    mcp.InternalError,
+						Message: err.Error(),
+					}
+				}
+			} else {
+				response.Result = result
+			}
+		} else {
+			response.Error = &mcp.RPCError{
+				Code:    mcp.MethodNotFound,
+				Message: fmt.Sprintf("Method not found: %s", request.Method),
+			}
+		}
+
+		// Marshal the response
+		return json.Marshal(response)
+	}
+
+	// Set up message handler for SSE transport
+	if sseTransport, ok := t.(*transport.SSETransport); ok {
+		sseTransport.SetMessageHandler(messageHandler)
+	}
+
+	// Set up message handler for HTTP Streams transport
+	if httpStreamsTransport, ok := t.(*transport.HTTPStreamsTransport); ok {
+		httpStreamsTransport.SetMessageHandler(messageHandler)
+	}
 
 	// Setup context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
@@ -87,17 +159,19 @@ func main() {
 		cancel()
 	}()
 
-	// Start server (this registers default handlers)
+	// Start server
 	if err := server.Start(ctx); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
-	// Register DevPod handlers AFTER start to override defaults
-	registerDevPodHandlers(server)
-
 	log.Printf("DevPod MCP server started with %s transport", *transportType)
 	if *transportType == "sse" {
+		log.Printf("Starting SSE server on %s", formattedAddr)
 		log.Printf("Listening on %s", *addr)
+	} else if *transportType == "http-streams" {
+		log.Printf("Starting HTTP Streams server on %s", formattedAddr)
+		log.Printf("Listening on %s", *addr)
+		log.Printf("Endpoints: /mcp (POST/GET), /health (GET)")
 	}
 
 	// Wait for context cancellation
