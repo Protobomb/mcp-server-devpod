@@ -134,6 +134,12 @@ jobs:
     - name: Download dependencies
       run: go mod download && go mod tidy
 
+    - name: Install DevPod
+      run: |
+        curl -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
+        sudo install devpod /usr/local/bin
+        devpod version
+
     - name: Build server
       run: go build -o mcp-server-devpod main.go
 
@@ -163,6 +169,12 @@ jobs:
 
     - name: Download dependencies
       run: go mod download && go mod tidy
+
+    - name: Install DevPod
+      run: |
+        curl -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
+        sudo install devpod /usr/local/bin
+        devpod version
 
     - name: Build server
       run: go build -o mcp-server-devpod main.go
@@ -194,6 +206,12 @@ jobs:
     - name: Download dependencies
       run: go mod download && go mod tidy
 
+    - name: Install DevPod
+      run: |
+        curl -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
+        sudo install devpod /usr/local/bin
+        devpod version
+
     - name: Build server
       run: go build -o mcp-server-devpod main.go
 
@@ -223,6 +241,12 @@ jobs:
 
     - name: Download dependencies
       run: go mod download && go mod tidy
+
+    - name: Install DevPod
+      run: |
+        curl -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
+        sudo install devpod /usr/local/bin
+        devpod version
 
     - name: Build server
       run: go build -o mcp-server-devpod main.go
