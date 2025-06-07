@@ -8,7 +8,7 @@ An MCP (Model Context Protocol) server that provides an interface to [DevPod](ht
 - **Provider Management**: List and add DevPod providers
 - **SSH Access**: Execute commands in workspaces via SSH
 - **Status Monitoring**: Check the status of workspaces
-- **Multiple Transports**: Supports both STDIO and SSE (Server-Sent Events) transports
+- **Multiple Transports**: Supports STDIO, SSE (Server-Sent Events), and HTTP Streams transports
 
 ## Prerequisites
 
@@ -65,12 +65,25 @@ The container includes:
 ./mcp-server-devpod -transport=sse -addr=8080
 ```
 
+### HTTP Streams Mode
+
+```bash
+./mcp-server-devpod -transport=http-streams -addr=8080
+```
+
+The HTTP Streams transport provides:
+- **Full MCP Protocol Compliance**: Complete implementation per MCP specification
+- **Session Management**: Secure session-based communication with UUID session IDs
+- **Bidirectional Communication**: POST /mcp for client→server, SSE for server→client responses
+- **Health Endpoint**: GET /health for service monitoring
+- **CORS Support**: Full CORS headers for web client compatibility
+
 ### Environment Variables (Docker)
 
 When running in Docker, you can configure the server using these environment variables:
 
-- `MCP_TRANSPORT`: Transport type (`stdio` or `sse`, default: `sse`)
-- `MCP_ADDR`: Address for SSE server (default: `:8080`)
+- `MCP_TRANSPORT`: Transport type (`stdio`, `sse`, or `http-streams`, default: `sse`)
+- `MCP_ADDR`: Address for SSE and HTTP Streams servers (default: `:8080`)
 - `DEVPOD_HOME`: DevPod home directory (default: `/home/mcp/.devpod`)
 - `DEVPOD_PROVIDER`: Default DevPod provider (default: `docker`)
 - `DEVPOD_DOCKER_HOST`: Docker host for DevPod (default: `unix:///var/run/docker.sock`)
@@ -119,6 +132,41 @@ The server exposes the following tools through the MCP protocol:
     - `command` (optional): Command to execute
 
 ## Example Usage with MCP Client
+
+### HTTP Streams Transport Usage
+
+The HTTP Streams transport follows the MCP specification for HTTP-based communication:
+
+```bash
+# 1. Initialize session
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {},
+      "clientInfo": {"name": "test-client", "version": "1.0.0"}
+    }
+  }'
+
+# 2. Connect to SSE stream (use session ID from above response)
+curl -N "http://localhost:8080/mcp?session=SESSION_ID"
+
+# 3. Send messages (in another terminal)
+curl -X POST "http://localhost:8080/mcp?session=SESSION_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list"
+  }'
+
+# 4. Check health
+curl http://localhost:8080/health
+```
 
 ### Create a Workspace
 
