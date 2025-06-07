@@ -249,11 +249,102 @@ def test_mcp_workflow(base_url=None):
             print(f"❌ Tool call failed: {response}")
             return False
         
-        # Test 5: Test error handling with invalid tool
-        print("\n📋 Test 5: Test error handling with invalid tool")
+        # Test 5: Test DevPod listWorkspaces tool
+        print("\n📋 Test 5: Test DevPod listWorkspaces tool")
+        list_workspaces_message = {
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.listWorkspaces",
+                "arguments": {}
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(list_workspaces_message, indent=2)}")
+        response = client.send_message(list_workspaces_message)
+        
+        if response and response.get('result', {}).get('content'):
+            print("✓ DevPod listWorkspaces tool call successful")
+        else:
+            print(f"❌ DevPod listWorkspaces failed: {response}")
+            return False
+        
+        # Test 6: Test DevPod listProviders tool
+        print("\n📋 Test 6: Test DevPod listProviders tool")
+        list_providers_message = {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.listProviders",
+                "arguments": {}
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(list_providers_message, indent=2)}")
+        response = client.send_message(list_providers_message)
+        
+        if response and response.get('result', {}).get('content'):
+            print("✓ DevPod listProviders tool call successful")
+        else:
+            print(f"❌ DevPod listProviders failed: {response}")
+            return False
+        
+        # Test 7: Test DevPod workspace status tool
+        print("\n📋 Test 7: Test DevPod workspace status tool")
+        status_message = {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.status",
+                "arguments": {
+                    "name": "test-workspace"
+                }
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(status_message, indent=2)}")
+        response = client.send_message(status_message)
+        
+        if response and response.get('error'):
+            print(f"✓ DevPod status correctly failed for non-existent workspace: {response['error']['message']}")
+        elif response and response.get('result', {}).get('content'):
+            print("✓ DevPod status tool call successful")
+        else:
+            print(f"❌ DevPod status failed unexpectedly: {response}")
+            return False
+        
+        # Test 8: Test DevPod createWorkspace validation
+        print("\n📋 Test 8: Test DevPod createWorkspace validation")
+        create_workspace_message = {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.createWorkspace",
+                "arguments": {
+                    "name": "test-workspace-http",
+                    "source": "https://github.com/example/repo"
+                }
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(create_workspace_message, indent=2)}")
+        response = client.send_message(create_workspace_message)
+        
+        if response and (response.get('result') or response.get('error')):
+            print("✓ DevPod createWorkspace tool handled request (success or graceful error)")
+        else:
+            print(f"❌ DevPod createWorkspace failed unexpectedly: {response}")
+            return False
+        
+        # Test 9: Test error handling with invalid tool
+        print("\n📋 Test 9: Test error handling with invalid tool")
         invalid_call_message = {
             "jsonrpc": "2.0",
-            "id": 4,
+            "id": 9,
             "method": "tools/call",
             "params": {
                 "name": "nonexistent_tool",
@@ -268,6 +359,27 @@ def test_mcp_workflow(base_url=None):
             print("✓ Error handling works correctly for invalid tool")
         else:
             print(f"❌ Expected error response for invalid tool, got: {response}")
+            return False
+        
+        # Test 10: Test DevPod tool with invalid arguments
+        print("\n📋 Test 10: Test DevPod tool with invalid arguments")
+        invalid_args_message = {
+            "jsonrpc": "2.0",
+            "id": 10,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.status",
+                "arguments": {}  # Missing required 'name' argument
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(invalid_args_message, indent=2)}")
+        response = client.send_message(invalid_args_message)
+        
+        if response and (response.get('error') or response.get('result')):
+            print("✓ DevPod tool handled invalid arguments gracefully")
+        else:
+            print(f"❌ DevPod tool failed to handle invalid arguments: {response}")
             return False
         
         print("\n🎉 All HTTP Streams DevPod tests passed!")

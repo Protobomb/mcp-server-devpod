@@ -75,9 +75,6 @@ func main() {
 	// Create server
 	server := mcp.NewServer(t)
 
-	// Register DevPod handlers BEFORE starting the server
-	registerDevPodHandlers(server)
-
 	// Create shared message handler for SSE and HTTP Streams transports
 	messageHandler := func(message []byte) ([]byte, error) {
 		// Create a temporary context for message processing
@@ -163,6 +160,9 @@ func main() {
 	if err := server.Start(ctx); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+
+	// Register DevPod handlers AFTER starting the server
+	registerDevPodHandlers(server)
 
 	log.Printf("DevPod MCP server started with %s transport", *transportType)
 	if *transportType == "sse" {
@@ -460,11 +460,27 @@ func registerDevPodHandlers(server *mcp.Server) {
 	// List available tools
 	server.RegisterHandler("tools/list", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		tools := []map[string]interface{}{
+			// Framework's built-in echo tool
+			{
+				"name":        "echo",
+				"description": "Echo back the provided message",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"message": map[string]interface{}{
+							"type":        "string",
+							"description": "The message to echo back",
+						},
+					},
+					"required": []string{"message"},
+				},
+			},
+			// DevPod-specific tools
 			{
 				"name":        "devpod.listWorkspaces",
 				"description": "List all DevPod workspaces",
 				"inputSchema": map[string]interface{}{
-					"type": "object",
+					"type":       "object",
 					"properties": map[string]interface{}{},
 				},
 			},
@@ -548,7 +564,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				"name":        "devpod.listProviders",
 				"description": "List all DevPod providers",
 				"inputSchema": map[string]interface{}{
-					"type": "object",
+					"type":       "object",
 					"properties": map[string]interface{}{},
 				},
 			},
@@ -620,7 +636,23 @@ func registerDevPodHandlers(server *mcp.Server) {
 			return nil, mcp.NewInvalidParamsError("Invalid tool call parameters")
 		}
 
-		// Get the handler for this tool
+		// Handle framework's built-in echo tool
+		if callParams.Name == "echo" {
+			message, ok := callParams.Arguments["message"].(string)
+			if !ok {
+				return nil, mcp.NewInvalidParamsError("Missing or invalid 'message' parameter for echo tool")
+			}
+			return map[string]interface{}{
+				"content": []map[string]interface{}{
+					{
+						"type": "text",
+						"text": fmt.Sprintf("Echo: %s", message),
+					},
+				},
+			}, nil
+		}
+
+		// Get the handler for DevPod tools
 		handler := server.GetHandler(callParams.Name)
 		if handler == nil {
 			return nil, mcp.NewInvalidParamsError(fmt.Sprintf("Unknown tool: %s", callParams.Name))

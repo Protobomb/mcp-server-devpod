@@ -126,6 +126,12 @@ test-integration-devpod: build
 	@echo "Running DevPod functionality tests..."
 	python3 test_devpod_mcp.py
 
+test-devpod-tools: build
+	@echo "Running comprehensive DevPod tool tests..."
+	python3 scripts/test_devpod_tools.py --transport=stdio
+	python3 scripts/test_devpod_tools.py --transport=sse --port 8081
+	python3 scripts/test_devpod_tools.py --transport=http-streams --port 8082
+
 test-integration-all: build
 	@echo "Running all transport integration tests..."
 	python3 scripts/test_all_transports.py --transport=all

@@ -272,11 +272,110 @@ def test_mcp_workflow(base_url=None):
             print(f"❌ Tool call failed: {mcp_response}")
             return False
         
-        # Test 5: Test error handling with invalid tool
-        print("\n📋 Test 5: Test error handling with invalid tool")
+        # Test 5: Test DevPod listWorkspaces tool
+        print("\n📋 Test 5: Test DevPod listWorkspaces tool")
+        list_workspaces_message = {
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.listWorkspaces",
+                "arguments": {}
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(list_workspaces_message, indent=2)}")
+        post_response = client.send_message(list_workspaces_message)
+        print(f"📤 POST response: {post_response}")
+        
+        mcp_response = client.wait_for_response(request_id=5, timeout=10)
+        if mcp_response and mcp_response.get('result', {}).get('content'):
+            print("✓ DevPod listWorkspaces tool call successful")
+        else:
+            print(f"❌ DevPod listWorkspaces failed: {mcp_response}")
+            return False
+        
+        # Test 6: Test DevPod listProviders tool
+        print("\n📋 Test 6: Test DevPod listProviders tool")
+        list_providers_message = {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.listProviders",
+                "arguments": {}
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(list_providers_message, indent=2)}")
+        post_response = client.send_message(list_providers_message)
+        print(f"📤 POST response: {post_response}")
+        
+        mcp_response = client.wait_for_response(request_id=6, timeout=10)
+        if mcp_response and mcp_response.get('result', {}).get('content'):
+            print("✓ DevPod listProviders tool call successful")
+        else:
+            print(f"❌ DevPod listProviders failed: {mcp_response}")
+            return False
+        
+        # Test 7: Test DevPod workspace status tool
+        print("\n📋 Test 7: Test DevPod workspace status tool")
+        status_message = {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.status",
+                "arguments": {
+                    "name": "test-workspace"
+                }
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(status_message, indent=2)}")
+        post_response = client.send_message(status_message)
+        print(f"📤 POST response: {post_response}")
+        
+        mcp_response = client.wait_for_response(request_id=7, timeout=10)
+        if mcp_response and mcp_response.get('error'):
+            print(f"✓ DevPod status correctly failed for non-existent workspace: {mcp_response['error']['message']}")
+        elif mcp_response and mcp_response.get('result', {}).get('content'):
+            print("✓ DevPod status tool call successful")
+        else:
+            print(f"❌ DevPod status failed unexpectedly: {mcp_response}")
+            return False
+        
+        # Test 8: Test DevPod createWorkspace validation
+        print("\n📋 Test 8: Test DevPod createWorkspace validation")
+        create_workspace_message = {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.createWorkspace",
+                "arguments": {
+                    "name": "test-workspace-sse",
+                    "source": "https://github.com/example/repo"
+                }
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(create_workspace_message, indent=2)}")
+        post_response = client.send_message(create_workspace_message)
+        print(f"📤 POST response: {post_response}")
+        
+        mcp_response = client.wait_for_response(request_id=8, timeout=15)
+        if mcp_response and (mcp_response.get('result') or mcp_response.get('error')):
+            print("✓ DevPod createWorkspace tool handled request (success or graceful error)")
+        else:
+            print(f"❌ DevPod createWorkspace failed unexpectedly: {mcp_response}")
+            return False
+        
+        # Test 9: Test error handling with invalid tool
+        print("\n📋 Test 9: Test error handling with invalid tool")
         invalid_call_message = {
             "jsonrpc": "2.0",
-            "id": 4,
+            "id": 9,
             "method": "tools/call",
             "params": {
                 "name": "nonexistent_tool",
@@ -289,11 +388,34 @@ def test_mcp_workflow(base_url=None):
         print(f"📤 POST response: {post_response}")
         
         # Wait for MCP response via SSE
-        mcp_response = client.wait_for_response(request_id=4, timeout=5)
+        mcp_response = client.wait_for_response(request_id=9, timeout=5)
         if mcp_response and mcp_response.get('error'):
             print("✓ Error handling works correctly for invalid tool")
         else:
             print(f"❌ Expected error response for invalid tool, got: {mcp_response}")
+            return False
+        
+        # Test 10: Test DevPod tool with invalid arguments
+        print("\n📋 Test 10: Test DevPod tool with invalid arguments")
+        invalid_args_message = {
+            "jsonrpc": "2.0",
+            "id": 10,
+            "method": "tools/call",
+            "params": {
+                "name": "devpod.status",
+                "arguments": {}  # Missing required 'name' argument
+            }
+        }
+        
+        print(f"→ Sending: {json.dumps(invalid_args_message, indent=2)}")
+        post_response = client.send_message(invalid_args_message)
+        print(f"📤 POST response: {post_response}")
+        
+        mcp_response = client.wait_for_response(request_id=10, timeout=5)
+        if mcp_response and (mcp_response.get('error') or mcp_response.get('result')):
+            print("✓ DevPod tool handled invalid arguments gracefully")
+        else:
+            print(f"❌ DevPod tool failed to handle invalid arguments: {mcp_response}")
             return False
         
         print("\n🎉 All SSE DevPod tests passed!")
