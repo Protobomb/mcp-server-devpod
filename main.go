@@ -376,7 +376,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 
 		args := []string{"provider", "add", addParams.Name}
 		for key, value := range addParams.Options {
-			args = append(args, fmt.Sprintf("--%s=%s", key, value))
+			args = append(args, "-o", fmt.Sprintf("%s=%s", key, value))
 		}
 
 		cmd := exec.CommandContext(ctx, "devpod", args...)
