@@ -249,6 +249,16 @@ go test ./...
 
 The server is built using the [mcp-server-framework](https://github.com/Protobomb/mcp-server-framework) and implements handlers for DevPod CLI commands. It executes DevPod commands as subprocesses and returns the results through the MCP protocol.
 
+## Documentation
+
+Additional documentation is available in the [`docs/`](./docs/) directory:
+
+- **[Inspector Testing Guide](./docs/INSPECTOR_TESTING_GUIDE.md)** - Complete step-by-step guide for testing with MCP Inspector
+- **[Testing Solutions](./docs/TESTING_SOLUTIONS.md)** - Comprehensive testing results and evidence
+- **[Example Usage](./docs/example_usage.md)** - Additional usage examples and patterns
+- **[Framework Upgrade Summary](./docs/FRAMEWORK_UPGRADE_SUMMARY.md)** - Details about the v1.2.0 framework upgrade
+- **[Release Notes](./docs/RELEASE.md)** - Version history and release information
+
 ## Contributing
 
 1. Fork the repository
