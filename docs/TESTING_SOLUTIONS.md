@@ -240,32 +240,9 @@ rsync -avz /workspace/mcp-server-devpod/screenshots/ agent@10.0.0.153:/home/agen
 
 All screenshots are now safely stored on the arch-dev-box for future reference!
 
-## Visual Evidence
+## Testing Evidence
 
-### Successful Operations
-
-**Provider Listing Success:**
-![List Providers Success](./screenshots/listProviders_success_both_providers.png)
-
-**Workspace Creation:**
-![Create Workspace Running](./screenshots/createWorkspace_running.png)
-
-**Status Checking:**
-![Workspace Status Running](./screenshots/status_running.png)
-
-**Provider Addition Success:**
-![Add Provider SSH Success](./screenshots/addProvider_ssh_success.png)
-
-### Error Handling
-
-**Timeout Handling:**
-![Create Workspace Timeout Error](./screenshots/createWorkspace_timeout_error.png)
-
-**Provider Conflict Handling:**
-![Add Provider SSH Already Exists Error](./screenshots/addProvider_ssh_already_exists_error.png)
-
-**Detailed Error Views:**
-![Add Provider Error Detailed View](./screenshots/addProvider_error_detailed_view.png)
+All testing operations have been successfully completed and documented. Screenshots were captured during testing and transferred to the remote host for reference.
 
 ## Transport Testing Results
 

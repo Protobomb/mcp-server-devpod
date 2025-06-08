@@ -65,14 +65,12 @@ You should see:
 2. Click "Run Tool"
 3. **Expected**: Shows available providers (docker, ssh, etc.)
 
-![List Providers Success](./screenshots/listProviders_success_both_providers.png)
 
 ### Step 2: List Workspaces
 1. Click on `devpod.listWorkspaces` tool  
 2. Click "Run Tool"
 3. **Expected**: Empty array `[]` (no workspaces initially)
 
-![List Workspaces Running](./screenshots/listWorkspaces_running.png)
 
 ### Step 3: Create Workspace
 1. Click on `devpod.createWorkspace` tool
@@ -84,7 +82,6 @@ You should see:
 3. Click "Run Tool"
 4. **Expected**: Success message with workspace creation logs
 
-![Create Workspace Running](./screenshots/createWorkspace_running.png)
 
 ### Step 4: Check Workspace Status
 1. Click on `devpod.status` tool
@@ -92,7 +89,6 @@ You should see:
 3. Click "Run Tool"
 4. **Expected**: Status showing workspace is "Running"
 
-![Workspace Status Running](./screenshots/status_running.png)
 
 ### Step 5: SSH into Workspace
 1. Click on `devpod.ssh` tool
@@ -132,30 +128,17 @@ All operations performed through the MCP protocol via Inspector UI!
 The MCP server properly handles various error conditions. Here are some examples:
 
 ### Timeout Errors
-When operations take too long, the server returns appropriate timeout errors:
-
-![Create Workspace Timeout Error](./screenshots/createWorkspace_timeout_error.png)
-
-![List Workspaces Timeout Error](./screenshots/listWorkspaces_timeout_error.png)
-
-![Status Timeout Error](./screenshots/status_timeout_error.png)
+When operations take too long, the server returns appropriate timeout errors with clear error messages.
 
 ### Provider Management Errors
-When adding providers that already exist:
-
-![Add Provider SSH Already Exists Error](./screenshots/addProvider_ssh_already_exists_error.png)
-
-![Add Provider Error Detailed View](./screenshots/addProvider_error_detailed_view.png)
+When adding providers that already exist, the server returns appropriate conflict errors.
 
 ### Successful Provider Addition
-When adding providers successfully:
-
-![Add Provider SSH Success](./screenshots/addProvider_ssh_success.png)
+When adding providers successfully, the server returns confirmation of the operation.
 
 ### Transport Connection Issues
-HTTP Streams transport connection error example:
+HTTP Streams transport may show connection errors if the server is not properly configured for that transport method.
 
-![MCP Inspector HTTP Streams Connection Error](./screenshots/mcp_inspector_http_streams_connection_error.png)
 
 ## Troubleshooting
 
