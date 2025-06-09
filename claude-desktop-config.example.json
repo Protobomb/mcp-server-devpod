@@ -1,9 +1,23 @@
 {
   "mcpServers": {
     "devpod": {
-      "command": "/usr/local/bin/mcp-server-devpod",
-      "args": [],
+      "command": "/path/to/mcp-server-devpod",
+      "args": ["--transport", "stdio"],
       "env": {}
     }
   }
 }
+
+// Instructions for Claude Desktop:
+// 1. Download the mcp-server-devpod binary from the releases page
+// 2. Place it in a directory like /usr/local/bin/ or ~/bin/
+// 3. Make it executable: chmod +x /path/to/mcp-server-devpod
+// 4. Update the "command" path above to point to your binary location
+// 5. Add this configuration to your Claude Desktop config file:
+//    - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
+//    - Windows: %APPDATA%\Claude\claude_desktop_config.json
+//    - Linux: ~/.config/claude/claude_desktop_config.json
+// 6. Restart Claude Desktop
+//
+// Note: DevPod must be installed and available in your PATH for the tools to work.
+// If DevPod is not available, the tools will return helpful error messages.
