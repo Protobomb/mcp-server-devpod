@@ -36,6 +36,15 @@ type DevPodProvider struct {
 }
 
 func main() {
+	// Add panic recovery to catch any crashes
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC: Server crashed with error: %v", r)
+			fmt.Fprintf(os.Stderr, "PANIC: Server crashed with error: %v\n", r)
+			os.Exit(1)
+		}
+	}()
+
 	var (
 		transportType = flag.String("transport", "stdio", "Transport type: stdio, sse, or http-streams")
 		addr          = flag.String("addr", "8080", "Port for SSE and HTTP Streams transports")
@@ -47,6 +56,9 @@ func main() {
 		fmt.Printf("mcp-server-devpod version %s\n", version)
 		return
 	}
+
+	log.Printf("Starting DevPod MCP server with transport: %s", *transportType)
+	fmt.Fprintf(os.Stderr, "Starting DevPod MCP server with transport: %s\n", *transportType)
 
 	// Format address for SSE and HTTP Streams transports
 	var formattedAddr string
@@ -60,6 +72,8 @@ func main() {
 	}
 
 	// Create transport
+	log.Printf("Creating transport: %s", *transportType)
+	fmt.Fprintf(os.Stderr, "Creating transport: %s\n", *transportType)
 	var t mcp.Transport
 	switch *transportType {
 	case "stdio":
@@ -73,6 +87,8 @@ func main() {
 	}
 
 	// Create server
+	log.Printf("Creating MCP server")
+	fmt.Fprintf(os.Stderr, "Creating MCP server\n")
 	server := mcp.NewServer(t)
 
 	// Setup context with cancellation
@@ -90,20 +106,29 @@ func main() {
 	}()
 
 	// Register MCP protocol handlers BEFORE starting the server (to prevent override)
+	log.Printf("Registering MCP protocol handlers")
+	fmt.Fprintf(os.Stderr, "Registering MCP protocol handlers\n")
 	registerMCPHandlers(server)
 
 	// Register DevPod handlers BEFORE starting the server
+	log.Printf("Registering DevPod handlers")
+	fmt.Fprintf(os.Stderr, "Registering DevPod handlers\n")
 	registerDevPodHandlers(server)
 
 	// Set up message handler for HTTP-based transports
+	log.Printf("Setting up message handler")
+	fmt.Fprintf(os.Stderr, "Setting up message handler\n")
 	setupMessageHandler(server, t)
 
 	// Add debug output to stderr for Claude Desktop
 	fmt.Fprintf(os.Stderr, "DevPod MCP server initializing with %s transport\n", *transportType)
 
 	// Start server (default handlers won't override existing ones)
+	log.Printf("About to start server...")
+	fmt.Fprintf(os.Stderr, "About to start server...\n")
 	if err := server.Start(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start server: %v\n", err)
+		log.Printf("Failed to start server: %v", err)
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
@@ -139,24 +164,36 @@ func main() {
 }
 
 func registerMCPHandlers(server *mcp.Server) {
+	log.Printf("Registering prompts/list handler")
+	fmt.Fprintf(os.Stderr, "Registering prompts/list handler\n")
 	// Register prompts/list handler (required by Claude Desktop)
 	server.RegisterHandler("prompts/list", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		log.Printf("prompts/list called")
+		fmt.Fprintf(os.Stderr, "prompts/list called\n")
 		// Return empty prompts list since we don't provide any prompts
 		return map[string]interface{}{
 			"prompts": []interface{}{},
 		}, nil
 	})
 
+	log.Printf("Registering resources/list handler")
+	fmt.Fprintf(os.Stderr, "Registering resources/list handler\n")
 	// Register resources/list handler (optional but good practice)
 	server.RegisterHandler("resources/list", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		log.Printf("resources/list called")
+		fmt.Fprintf(os.Stderr, "resources/list called\n")
 		// Return empty resources list since we don't provide any resources
 		return map[string]interface{}{
 			"resources": []interface{}{},
 		}, nil
 	})
 
+	log.Printf("Registering tools/list handler")
+	fmt.Fprintf(os.Stderr, "Registering tools/list handler\n")
 	// Override the default tools/list handler to include our DevPod tools
 	server.RegisterHandler("tools/list", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		log.Printf("tools/list called")
+		fmt.Fprintf(os.Stderr, "tools/list called\n")
 		tools := []map[string]interface{}{
 			// Echo tool (from framework)
 			{
@@ -325,7 +362,12 @@ func registerMCPHandlers(server *mcp.Server) {
 }
 
 func registerDevPodHandlers(server *mcp.Server) {
+	log.Printf("Registering DevPod handlers")
+	fmt.Fprintf(os.Stderr, "Registering DevPod handlers\n")
+	
 	// List workspaces
+	log.Printf("Registering devpod_listWorkspaces handler")
+	fmt.Fprintf(os.Stderr, "Registering devpod_listWorkspaces handler\n")
 	server.RegisterHandler("devpod_listWorkspaces", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		cmd := exec.CommandContext(ctx, "devpod", "list", "--output", "json")
 		output, err := cmd.Output()
