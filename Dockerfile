@@ -22,13 +22,16 @@ RUN go build -o mcp-server-devpod main.go
 # Runtime stage
 FROM alpine:latest
 
-# Install runtime dependencies
+# Install runtime dependencies including Docker
 RUN apk add --no-cache \
     ca-certificates \
     curl \
     git \
     openssh-client \
-    bash
+    bash \
+    docker \
+    docker-cli \
+    docker-compose
 
 # Install DevPod
 RUN curl -L -o /tmp/devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64" && \
@@ -39,9 +42,19 @@ RUN curl -L -o /tmp/devpod "https://github.com/loft-sh/devpod/releases/latest/do
 RUN addgroup -g 1000 mcp && \
     adduser -D -u 1000 -G mcp mcp
 
-# Create necessary directories
-RUN mkdir -p /home/mcp/.devpod && \
+# Create necessary directories and setup DevPod structure
+RUN mkdir -p /home/mcp/.devpod/agent/contexts/default/workspaces && \
+    mkdir -p /home/mcp/.devpod/providers && \
+    mkdir -p /home/mcp/.devpod/contexts && \
     chown -R mcp:mcp /home/mcp
+
+# Create a startup script to handle directory creation
+RUN echo '#!/bin/bash' > /usr/local/bin/setup-devpod.sh && \
+    echo 'mkdir -p $DEVPOD_HOME/agent/contexts/default/workspaces' >> /usr/local/bin/setup-devpod.sh && \
+    echo 'mkdir -p $DEVPOD_HOME/providers' >> /usr/local/bin/setup-devpod.sh && \
+    echo 'mkdir -p $DEVPOD_HOME/contexts' >> /usr/local/bin/setup-devpod.sh && \
+    echo 'exec "$@"' >> /usr/local/bin/setup-devpod.sh && \
+    chmod +x /usr/local/bin/setup-devpod.sh
 
 # Copy the built binary
 COPY --from=builder /build/mcp-server-devpod /usr/local/bin/mcp-server-devpod
@@ -63,5 +76,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Default command - use shell form to expand environment variables
-CMD mcp-server-devpod -transport=${MCP_TRANSPORT} -addr=${MCP_ADDR}
+# Default command - use setup script and shell form to expand environment variables
+CMD setup-devpod.sh mcp-server-devpod -transport=${MCP_TRANSPORT} -addr=${MCP_ADDR}
