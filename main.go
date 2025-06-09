@@ -163,7 +163,7 @@ func main() {
 
 	// Register MCP protocol handlers AFTER starting the server
 	registerMCPHandlers(server)
-	
+
 	// Register DevPod handlers AFTER starting the server
 	registerDevPodHandlers(server)
 
