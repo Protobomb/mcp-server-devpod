@@ -161,6 +161,9 @@ func main() {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
+	// Register MCP protocol handlers AFTER starting the server
+	registerMCPHandlers(server)
+	
 	// Register DevPod handlers AFTER starting the server
 	registerDevPodHandlers(server)
 
@@ -187,6 +190,24 @@ func main() {
 	}
 
 	log.Println("Server stopped")
+}
+
+func registerMCPHandlers(server *mcp.Server) {
+	// Register prompts/list handler (required by Claude Desktop)
+	server.RegisterHandler("prompts/list", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		// Return empty prompts list since we don't provide any prompts
+		return map[string]interface{}{
+			"prompts": []interface{}{},
+		}, nil
+	})
+
+	// Register resources/list handler (optional but good practice)
+	server.RegisterHandler("resources/list", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		// Return empty resources list since we don't provide any resources
+		return map[string]interface{}{
+			"resources": []interface{}{},
+		}, nil
+	})
 }
 
 func registerDevPodHandlers(server *mcp.Server) {
