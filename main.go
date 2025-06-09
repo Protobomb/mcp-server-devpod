@@ -75,73 +75,6 @@ func main() {
 	// Create server
 	server := mcp.NewServer(t)
 
-	// Create shared message handler for SSE and HTTP Streams transports
-	messageHandler := func(message []byte) ([]byte, error) {
-		// Create a temporary context for message processing
-		msgCtx := context.Background()
-
-		// Parse the JSON-RPC message to check if it's a request or notification
-		var request mcp.JSONRPCRequest
-		if err := json.Unmarshal(message, &request); err != nil {
-			return nil, fmt.Errorf("invalid JSON-RPC message: %w", err)
-		}
-
-		// Check if this is a notification (no ID field)
-		if request.ID == nil {
-			// This is a notification - handle it and don't send a response
-			if handler := server.GetNotificationHandler(request.Method); handler != nil {
-				if err := handler(msgCtx, request.Params); err != nil {
-					log.Printf("Error handling notification %s: %v", request.Method, err)
-				}
-			} else {
-				log.Printf("No handler for notification: %s", request.Method)
-			}
-			// Return nil for notifications (no response expected)
-			return nil, nil
-		}
-
-		// This is a request - handle it and send a response
-		response := mcp.JSONRPCResponse{
-			JSONRPC: mcp.JSONRPCVersion,
-			ID:      request.ID,
-		}
-
-		// Get the handler for this method
-		if handler := server.GetHandler(request.Method); handler != nil {
-			result, err := handler(msgCtx, request.Params)
-			if err != nil {
-				if rpcErr, ok := err.(*mcp.RPCError); ok {
-					response.Error = rpcErr
-				} else {
-					response.Error = &mcp.RPCError{
-						Code:    mcp.InternalError,
-						Message: err.Error(),
-					}
-				}
-			} else {
-				response.Result = result
-			}
-		} else {
-			response.Error = &mcp.RPCError{
-				Code:    mcp.MethodNotFound,
-				Message: fmt.Sprintf("Method not found: %s", request.Method),
-			}
-		}
-
-		// Marshal the response
-		return json.Marshal(response)
-	}
-
-	// Set up message handler for SSE transport
-	if sseTransport, ok := t.(*transport.SSETransport); ok {
-		sseTransport.SetMessageHandler(messageHandler)
-	}
-
-	// Set up message handler for HTTP Streams transport
-	if httpStreamsTransport, ok := t.(*transport.HTTPStreamsTransport); ok {
-		httpStreamsTransport.SetMessageHandler(messageHandler)
-	}
-
 	// Setup context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -156,17 +89,22 @@ func main() {
 		cancel()
 	}()
 
-	// Start server
+	// Add debug output to stderr for Claude Desktop
+	fmt.Fprintf(os.Stderr, "DevPod MCP server initializing with %s transport\n", *transportType)
+
+	// Start server FIRST (this registers default handlers)
 	if err := server.Start(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to start server: %v\n", err)
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
-	// Register MCP protocol handlers AFTER starting the server
+	// Register MCP protocol handlers AFTER starting the server (to override defaults)
 	registerMCPHandlers(server)
 
 	// Register DevPod handlers AFTER starting the server
 	registerDevPodHandlers(server)
 
+	fmt.Fprintf(os.Stderr, "DevPod MCP server started with %s transport\n", *transportType)
 	log.Printf("DevPod MCP server started with %s transport", *transportType)
 	if *transportType == "sse" {
 		log.Printf("Starting SSE server on %s", formattedAddr)
@@ -178,17 +116,22 @@ func main() {
 	}
 
 	// Wait for context cancellation
+	fmt.Fprintf(os.Stderr, "DevPod MCP server waiting for shutdown signal...\n")
 	<-ctx.Done()
+	fmt.Fprintf(os.Stderr, "DevPod MCP server received shutdown signal, cleaning up...\n")
 
 	// Cleanup
 	if err := server.Stop(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error stopping server: %v\n", err)
 		log.Printf("Error stopping server: %v", err)
 	}
 
 	if err := server.Close(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error closing server: %v\n", err)
 		log.Printf("Error closing server: %v", err)
 	}
 
+	fmt.Fprintf(os.Stderr, "DevPod MCP server stopped\n")
 	log.Println("Server stopped")
 }
 
@@ -206,6 +149,192 @@ func registerMCPHandlers(server *mcp.Server) {
 		// Return empty resources list since we don't provide any resources
 		return map[string]interface{}{
 			"resources": []interface{}{},
+		}, nil
+	})
+
+	// Override the default tools/list handler to include our DevPod tools
+	server.RegisterHandler("tools/list", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		tools := []map[string]interface{}{
+			// Echo tool (from framework)
+			{
+				"name":        "echo",
+				"description": "Echo back the provided message",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"message": map[string]interface{}{
+							"type":        "string",
+							"description": "The message to echo back",
+						},
+					},
+					"required": []string{"message"},
+				},
+			},
+			// DevPod tools
+			{
+				"name":        "devpod_listWorkspaces",
+				"description": "List all DevPod workspaces",
+				"inputSchema": map[string]interface{}{
+					"type":       "object",
+					"properties": map[string]interface{}{},
+				},
+			},
+			{
+				"name":        "devpod_getWorkspaceStatus",
+				"description": "Get the status of a specific DevPod workspace",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"name": map[string]interface{}{
+							"type":        "string",
+							"description": "The name of the workspace",
+						},
+					},
+					"required": []string{"name"},
+				},
+			},
+			{
+				"name":        "devpod_createWorkspace",
+				"description": "Create a new DevPod workspace",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"name": map[string]interface{}{
+							"type":        "string",
+							"description": "The name of the workspace",
+						},
+						"source": map[string]interface{}{
+							"type":        "string",
+							"description": "The source repository or path",
+						},
+						"provider": map[string]interface{}{
+							"type":        "string",
+							"description": "The provider to use (optional)",
+						},
+						"ide": map[string]interface{}{
+							"type":        "string",
+							"description": "The IDE to use (optional)",
+						},
+					},
+					"required": []string{"name", "source"},
+				},
+			},
+			{
+				"name":        "devpod_startWorkspace",
+				"description": "Start a DevPod workspace",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"name": map[string]interface{}{
+							"type":        "string",
+							"description": "The name of the workspace",
+						},
+						"ide": map[string]interface{}{
+							"type":        "string",
+							"description": "The IDE to use (optional)",
+						},
+					},
+					"required": []string{"name"},
+				},
+			},
+			{
+				"name":        "devpod_stopWorkspace",
+				"description": "Stop a DevPod workspace",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"name": map[string]interface{}{
+							"type":        "string",
+							"description": "The name of the workspace",
+						},
+					},
+					"required": []string{"name"},
+				},
+			},
+			{
+				"name":        "devpod_deleteWorkspace",
+				"description": "Delete a DevPod workspace",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"name": map[string]interface{}{
+							"type":        "string",
+							"description": "The name of the workspace",
+						},
+						"force": map[string]interface{}{
+							"type":        "boolean",
+							"description": "Force deletion without confirmation",
+						},
+					},
+					"required": []string{"name"},
+				},
+			},
+			{
+				"name":        "devpod_getWorkspaceSSH",
+				"description": "Get SSH connection details for a DevPod workspace",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"name": map[string]interface{}{
+							"type":        "string",
+							"description": "The name of the workspace",
+						},
+					},
+					"required": []string{"name"},
+				},
+			},
+			{
+				"name":        "devpod_getWorkspaceLogs",
+				"description": "Get logs for a DevPod workspace",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"name": map[string]interface{}{
+							"type":        "string",
+							"description": "The name of the workspace",
+						},
+						"follow": map[string]interface{}{
+							"type":        "boolean",
+							"description": "Follow log output",
+						},
+					},
+					"required": []string{"name"},
+				},
+			},
+			{
+				"name":        "devpod_listProviders",
+				"description": "List all DevPod providers",
+				"inputSchema": map[string]interface{}{
+					"type":       "object",
+					"properties": map[string]interface{}{},
+				},
+			},
+			{
+				"name":        "devpod_addProvider",
+				"description": "Add a new DevPod provider",
+				"inputSchema": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"name": map[string]interface{}{
+							"type":        "string",
+							"description": "The name of the provider",
+						},
+						"url": map[string]interface{}{
+							"type":        "string",
+							"description": "The URL or path to the provider",
+						},
+						"options": map[string]interface{}{
+							"type":        "object",
+							"description": "Provider-specific options",
+						},
+					},
+					"required": []string{"name", "url"},
+				},
+			},
+		}
+
+		return map[string]interface{}{
+			"tools": tools,
 		}, nil
 	})
 }
