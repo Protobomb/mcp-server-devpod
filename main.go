@@ -895,7 +895,7 @@ func setupMessageHandler(server *mcp.Server, t mcp.Transport) {
 	// Create a message handler function that processes JSON-RPC messages
 	messageHandler := func(message []byte) ([]byte, error) {
 		ctx := context.Background()
-		
+
 		var request mcp.JSONRPCRequest
 		if err := json.Unmarshal(message, &request); err != nil {
 			return nil, fmt.Errorf("invalid JSON-RPC message: %w", err)
