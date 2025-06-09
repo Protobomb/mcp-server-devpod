@@ -89,20 +89,23 @@ func main() {
 		cancel()
 	}()
 
+	// Register MCP protocol handlers BEFORE starting the server (to prevent override)
+	registerMCPHandlers(server)
+
+	// Register DevPod handlers BEFORE starting the server
+	registerDevPodHandlers(server)
+
+	// Set up message handler for HTTP-based transports
+	setupMessageHandler(server, t)
+
 	// Add debug output to stderr for Claude Desktop
 	fmt.Fprintf(os.Stderr, "DevPod MCP server initializing with %s transport\n", *transportType)
 
-	// Start server FIRST (this registers default handlers)
+	// Start server (default handlers won't override existing ones)
 	if err := server.Start(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start server: %v\n", err)
 		log.Fatalf("Failed to start server: %v", err)
 	}
-
-	// Register MCP protocol handlers AFTER starting the server (to override defaults)
-	registerMCPHandlers(server)
-
-	// Register DevPod handlers AFTER starting the server
-	registerDevPodHandlers(server)
 
 	fmt.Fprintf(os.Stderr, "DevPod MCP server started with %s transport\n", *transportType)
 	log.Printf("DevPod MCP server started with %s transport", *transportType)
@@ -884,5 +887,73 @@ func parseTextProviderList(output string) map[string]interface{} {
 
 	return map[string]interface{}{
 		"providers": providers,
+	}
+}
+
+// setupMessageHandler sets up the message handler for HTTP-based transports
+func setupMessageHandler(server *mcp.Server, t mcp.Transport) {
+	// Create a message handler function that processes JSON-RPC messages
+	messageHandler := func(message []byte) ([]byte, error) {
+		ctx := context.Background()
+		
+		var request mcp.JSONRPCRequest
+		if err := json.Unmarshal(message, &request); err != nil {
+			return nil, fmt.Errorf("invalid JSON-RPC message: %w", err)
+		}
+
+		// Check if this is a notification (no ID field)
+		if request.ID == nil {
+			// This is a notification - handle it and don't send a response
+			if handler := server.GetNotificationHandler(request.Method); handler != nil {
+				if err := handler(ctx, request.Params); err != nil {
+					log.Printf("Error handling notification %s: %v", request.Method, err)
+				}
+			} else {
+				log.Printf("No handler for notification: %s", request.Method)
+			}
+			// Return nil for notifications (no response expected)
+			return nil, nil
+		}
+
+		// This is a request - handle it and send a response
+		response := mcp.JSONRPCResponse{
+			JSONRPC: mcp.JSONRPCVersion,
+			ID:      request.ID,
+		}
+
+		// Get the handler for this method
+		if handler := server.GetHandler(request.Method); handler != nil {
+			result, err := handler(ctx, request.Params)
+			if err != nil {
+				if rpcErr, ok := err.(*mcp.RPCError); ok {
+					response.Error = rpcErr
+				} else {
+					response.Error = &mcp.RPCError{
+						Code:    mcp.InternalError,
+						Message: err.Error(),
+					}
+				}
+			} else {
+				response.Result = result
+			}
+		} else {
+			response.Error = &mcp.RPCError{
+				Code:    mcp.MethodNotFound,
+				Message: fmt.Sprintf("Method not found: %s", request.Method),
+			}
+		}
+
+		// Marshal the response
+		return json.Marshal(response)
+	}
+
+	// Set up message handler for SSE transport
+	if sseTransport, ok := t.(*transport.SSETransport); ok {
+		sseTransport.SetMessageHandler(messageHandler)
+	}
+
+	// Set up message handler for HTTP Streams transport
+	if httpStreamsTransport, ok := t.(*transport.HTTPStreamsTransport); ok {
+		httpStreamsTransport.SetMessageHandler(messageHandler)
 	}
 }
