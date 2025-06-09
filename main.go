@@ -183,7 +183,7 @@ func registerMCPHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod_getWorkspaceStatus",
+				"name":        "devpod_status",
 				"description": "Get the status of a specific DevPod workspace",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
@@ -273,8 +273,8 @@ func registerMCPHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod_getWorkspaceSSH",
-				"description": "Get SSH connection details for a DevPod workspace",
+				"name":        "devpod_ssh",
+				"description": "SSH into a DevPod workspace",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
 					"properties": map[string]interface{}{
@@ -282,23 +282,9 @@ func registerMCPHandlers(server *mcp.Server) {
 							"type":        "string",
 							"description": "The name of the workspace",
 						},
-					},
-					"required": []string{"name"},
-				},
-			},
-			{
-				"name":        "devpod_getWorkspaceLogs",
-				"description": "Get logs for a DevPod workspace",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"name": map[string]interface{}{
+						"command": map[string]interface{}{
 							"type":        "string",
-							"description": "The name of the workspace",
-						},
-						"follow": map[string]interface{}{
-							"type":        "boolean",
-							"description": "Follow log output",
+							"description": "Command to execute (optional)",
 						},
 					},
 					"required": []string{"name"},
@@ -322,16 +308,12 @@ func registerMCPHandlers(server *mcp.Server) {
 							"type":        "string",
 							"description": "The name of the provider",
 						},
-						"url": map[string]interface{}{
-							"type":        "string",
-							"description": "The URL or path to the provider",
-						},
 						"options": map[string]interface{}{
 							"type":        "object",
 							"description": "Provider-specific options",
 						},
 					},
-					"required": []string{"name", "url"},
+					"required": []string{"name"},
 				},
 			},
 		}
@@ -610,173 +592,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 		return status, nil
 	})
 
-	// List available tools
-	server.RegisterHandler("tools/list", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
-		tools := []map[string]interface{}{
-			// Framework's built-in echo tool
-			{
-				"name":        "echo",
-				"description": "Echo back the provided message",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"message": map[string]interface{}{
-							"type":        "string",
-							"description": "The message to echo back",
-						},
-					},
-					"required": []string{"message"},
-				},
-			},
-			// DevPod-specific tools
-			{
-				"name":        "devpod_listWorkspaces",
-				"description": "List all DevPod workspaces",
-				"inputSchema": map[string]interface{}{
-					"type":       "object",
-					"properties": map[string]interface{}{},
-				},
-			},
-			{
-				"name":        "devpod_createWorkspace",
-				"description": "Create a new DevPod workspace",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"name": map[string]interface{}{
-							"type":        "string",
-							"description": "Name of the workspace",
-						},
-						"source": map[string]interface{}{
-							"type":        "string",
-							"description": "Source repository or path",
-						},
-						"provider": map[string]interface{}{
-							"type":        "string",
-							"description": "Provider to use (optional)",
-						},
-						"ide": map[string]interface{}{
-							"type":        "string",
-							"description": "IDE to use (optional)",
-						},
-					},
-					"required": []string{"name", "source"},
-				},
-			},
-			{
-				"name":        "devpod_startWorkspace",
-				"description": "Start a DevPod workspace",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"name": map[string]interface{}{
-							"type":        "string",
-							"description": "Name of the workspace",
-						},
-						"ide": map[string]interface{}{
-							"type":        "string",
-							"description": "IDE to use (optional)",
-						},
-					},
-					"required": []string{"name"},
-				},
-			},
-			{
-				"name":        "devpod_stopWorkspace",
-				"description": "Stop a DevPod workspace",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"name": map[string]interface{}{
-							"type":        "string",
-							"description": "Name of the workspace",
-						},
-					},
-					"required": []string{"name"},
-				},
-			},
-			{
-				"name":        "devpod_deleteWorkspace",
-				"description": "Delete a DevPod workspace",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"name": map[string]interface{}{
-							"type":        "string",
-							"description": "Name of the workspace",
-						},
-						"force": map[string]interface{}{
-							"type":        "boolean",
-							"description": "Force delete without confirmation",
-						},
-					},
-					"required": []string{"name"},
-				},
-			},
-			{
-				"name":        "devpod_listProviders",
-				"description": "List all DevPod providers",
-				"inputSchema": map[string]interface{}{
-					"type":       "object",
-					"properties": map[string]interface{}{},
-				},
-			},
-			{
-				"name":        "devpod_addProvider",
-				"description": "Add a new DevPod provider",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"name": map[string]interface{}{
-							"type":        "string",
-							"description": "Name of the provider",
-						},
-						"options": map[string]interface{}{
-							"type":        "object",
-							"description": "Provider-specific options",
-						},
-					},
-					"required": []string{"name"},
-				},
-			},
-			{
-				"name":        "devpod_ssh",
-				"description": "SSH into a DevPod workspace",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"name": map[string]interface{}{
-							"type":        "string",
-							"description": "Name of the workspace",
-						},
-						"command": map[string]interface{}{
-							"type":        "string",
-							"description": "Command to execute (optional)",
-						},
-					},
-					"required": []string{"name"},
-				},
-			},
-			{
-				"name":        "devpod_status",
-				"description": "Get status of a DevPod workspace",
-				"inputSchema": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"name": map[string]interface{}{
-							"type":        "string",
-							"description": "Name of the workspace",
-						},
-					},
-					"required": []string{"name"},
-				},
-			},
-		}
 
-		return map[string]interface{}{
-			"tools": tools,
-		}, nil
-	})
 
 	// Custom tools/call handler to route tool calls to our DevPod handlers
 	server.RegisterHandler("tools/call", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
