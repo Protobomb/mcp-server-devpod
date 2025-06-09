@@ -1,6 +1,6 @@
 # MCP Server for DevPod
 
-An MCP (Model Context Protocol) server that provides an interface to [DevPod](https://devpod.sh/), enabling AI assistants to manage development environments programmatically.
+An MCP (Model Context Protocol) server that provides an interface to [DevPod](https://devpod_sh/), enabling AI assistants to manage development environments programmatically.
 
 ## Features
 
@@ -12,7 +12,7 @@ An MCP (Model Context Protocol) server that provides an interface to [DevPod](ht
 
 ## Prerequisites
 
-- [DevPod CLI](https://devpod.sh/docs/getting-started/install) installed and configured (included in Docker image)
+- [DevPod CLI](https://devpod_sh/docs/getting-started/install) installed and configured (included in Docker image)
 - Go 1.19 or later (for building from source)
 - Docker (for containerized deployment)
 
@@ -21,7 +21,7 @@ An MCP (Model Context Protocol) server that provides an interface to [DevPod](ht
 ### Option 1: From Source
 
 ```bash
-git clone https://github.com/Protobomb/mcp-server-devpod.git
+git clone https://github.com/Protobomb/mcp-server-devpod_git
 cd mcp-server-devpod
 go build -o mcp-server-devpod
 ```
@@ -94,39 +94,39 @@ The server exposes the following tools through the MCP protocol:
 
 ### Workspace Management
 
-- **`devpod.listWorkspaces`**: List all DevPod workspaces
-- **`devpod.createWorkspace`**: Create a new workspace
+- **`devpod_listWorkspaces`**: List all DevPod workspaces
+- **`devpod_createWorkspace`**: Create a new workspace
   - Parameters:
     - `name` (required): Workspace name
     - `source` (required): Repository URL or local path
     - `provider` (optional): Provider to use
     - `ide` (optional): IDE to use
-- **`devpod.startWorkspace`**: Start a workspace
+- **`devpod_startWorkspace`**: Start a workspace
   - Parameters:
     - `name` (required): Workspace name
     - `ide` (optional): IDE to use
-- **`devpod.stopWorkspace`**: Stop a workspace
+- **`devpod_stopWorkspace`**: Stop a workspace
   - Parameters:
     - `name` (required): Workspace name
-- **`devpod.deleteWorkspace`**: Delete a workspace
+- **`devpod_deleteWorkspace`**: Delete a workspace
   - Parameters:
     - `name` (required): Workspace name
     - `force` (optional): Force delete without confirmation
-- **`devpod.status`**: Get workspace status
+- **`devpod_status`**: Get workspace status
   - Parameters:
     - `name` (required): Workspace name
 
 ### Provider Management
 
-- **`devpod.listProviders`**: List all available providers
-- **`devpod.addProvider`**: Add a new provider
+- **`devpod_listProviders`**: List all available providers
+- **`devpod_addProvider`**: Add a new provider
   - Parameters:
     - `name` (required): Provider name
     - `options` (optional): Provider-specific options
 
 ### Remote Access
 
-- **`devpod.ssh`**: Execute commands in a workspace via SSH
+- **`devpod_ssh`**: Execute commands in a workspace via SSH
   - Parameters:
     - `name` (required): Workspace name
     - `command` (optional): Command to execute
@@ -174,7 +174,7 @@ curl http://localhost:8080/health
 {
   "jsonrpc": "2.0",
   "id": 1,
-  "method": "devpod.createWorkspace",
+  "method": "devpod_createWorkspace",
   "params": {
     "name": "my-project",
     "source": "https://github.com/user/my-project.git",
@@ -190,7 +190,7 @@ curl http://localhost:8080/health
 {
   "jsonrpc": "2.0",
   "id": 2,
-  "method": "devpod.listWorkspaces",
+  "method": "devpod_listWorkspaces",
   "params": {}
 }
 ```
@@ -201,7 +201,7 @@ curl http://localhost:8080/health
 {
   "jsonrpc": "2.0",
   "id": 3,
-  "method": "devpod.ssh",
+  "method": "devpod_ssh",
   "params": {
     "name": "my-project",
     "command": "npm install"
@@ -274,4 +274,4 @@ MIT License - see LICENSE file for details
 ## Acknowledgments
 
 - Built with [mcp-server-framework](https://github.com/Protobomb/mcp-server-framework)
-- Interfaces with [DevPod](https://devpod.sh/) by Loft Labs
+- Interfaces with [DevPod](https://devpod_sh/) by Loft Labs

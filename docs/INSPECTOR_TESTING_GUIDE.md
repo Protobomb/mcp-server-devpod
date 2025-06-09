@@ -13,7 +13,7 @@ This guide shows you how to reproduce the complete DevPod workspace lifecycle te
 
 ### 1. Build the MCP Server
 ```bash
-git clone https://github.com/Protobomb/mcp-server-devpod.git
+git clone https://github.com/Protobomb/mcp-server-devpod_git
 cd mcp-server-devpod
 go build -o mcp-server-devpod .
 ```
@@ -61,19 +61,19 @@ You should see:
 ## Complete DevPod Workflow Testing
 
 ### Step 1: List Providers
-1. Click on `devpod.listProviders` tool
+1. Click on `devpod_listProviders` tool
 2. Click "Run Tool"
 3. **Expected**: Shows available providers (docker, ssh, etc.)
 
 
 ### Step 2: List Workspaces
-1. Click on `devpod.listWorkspaces` tool  
+1. Click on `devpod_listWorkspaces` tool  
 2. Click "Run Tool"
 3. **Expected**: Empty array `[]` (no workspaces initially)
 
 
 ### Step 3: Create Workspace
-1. Click on `devpod.createWorkspace` tool
+1. Click on `devpod_createWorkspace` tool
 2. Fill in parameters:
    - **ide**: `none`
    - **name**: `test-workspace`
@@ -84,14 +84,14 @@ You should see:
 
 
 ### Step 4: Check Workspace Status
-1. Click on `devpod.status` tool
+1. Click on `devpod_status` tool
 2. Fill in **name**: `test-workspace`
 3. Click "Run Tool"
 4. **Expected**: Status showing workspace is "Running"
 
 
 ### Step 5: SSH into Workspace
-1. Click on `devpod.ssh` tool
+1. Click on `devpod_ssh` tool
 2. Fill in parameters:
    - **name**: `test-workspace`
    - **command**: `ls -la`
@@ -99,13 +99,13 @@ You should see:
 4. **Expected**: Directory listing from inside the workspace
 
 ### Step 6: Stop Workspace
-1. Click on `devpod.stopWorkspace` tool
+1. Click on `devpod_stopWorkspace` tool
 2. Fill in **name**: `test-workspace`
 3. Click "Run Tool"
 4. **Expected**: Success message with stopping logs
 
 ### Step 7: Delete Workspace
-1. Click on `devpod.deleteWorkspace` tool
+1. Click on `devpod_deleteWorkspace` tool
 2. Fill in **name**: `test-workspace`
 3. Optionally check **force** for no confirmation
 4. Click "Run Tool"

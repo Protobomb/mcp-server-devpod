@@ -130,17 +130,17 @@ Successfully tested complete DevPod workspace lifecycle through MCP Inspector UI
 3. **✅ Tools Listed**: All 11 tools (echo + 10 DevPod tools) functional in Inspector UI
 
 ### DevPod Operations Tested
-4. **✅ Provider Management**: `devpod.listProviders` showing Docker and SSH providers
-5. **✅ Workspace Listing**: `devpod.listWorkspaces` showing empty list (expected)
-6. **✅ Workspace Creation**: `devpod.createWorkspace` with parameters:
+4. **✅ Provider Management**: `devpod_listProviders` showing Docker and SSH providers
+5. **✅ Workspace Listing**: `devpod_listWorkspaces` showing empty list (expected)
+6. **✅ Workspace Creation**: `devpod_createWorkspace` with parameters:
    - ide="none"
    - name="test-workspace" 
    - provider="docker"
    - source="https://github.com/microsoft/vscode"
-7. **✅ Workspace Status**: `devpod.status` showing workspace running with SSH provider
-8. **✅ SSH Access**: `devpod.ssh` successfully listing VS Code repository contents
-9. **✅ Workspace Stop**: `devpod.stopWorkspace` successfully stopping container
-10. **✅ Workspace Deletion**: `devpod.deleteWorkspace` successfully removing workspace
+7. **✅ Workspace Status**: `devpod_status` showing workspace running with SSH provider
+8. **✅ SSH Access**: `devpod_ssh` successfully listing VS Code repository contents
+9. **✅ Workspace Stop**: `devpod_stopWorkspace` successfully stopping container
+10. **✅ Workspace Deletion**: `devpod_deleteWorkspace` successfully removing workspace
 
 ### Key Results
 - **Complete workspace lifecycle**: Create → Status → SSH → Stop → Delete

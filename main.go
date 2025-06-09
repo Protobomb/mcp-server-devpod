@@ -191,7 +191,7 @@ func main() {
 
 func registerDevPodHandlers(server *mcp.Server) {
 	// List workspaces
-	server.RegisterHandler("devpod.listWorkspaces", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_listWorkspaces", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		cmd := exec.CommandContext(ctx, "devpod", "list", "--output", "json")
 		output, err := cmd.Output()
 		if err != nil {
@@ -210,7 +210,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	})
 
 	// Create workspace
-	server.RegisterHandler("devpod.createWorkspace", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_createWorkspace", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		var createParams struct {
 			Name     string `json:"name"`
 			Source   string `json:"source"`
@@ -248,7 +248,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	})
 
 	// Start workspace
-	server.RegisterHandler("devpod.startWorkspace", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_startWorkspace", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		var startParams struct {
 			Name string `json:"name"`
 			IDE  string `json:"ide,omitempty"`
@@ -281,7 +281,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	})
 
 	// Stop workspace
-	server.RegisterHandler("devpod.stopWorkspace", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_stopWorkspace", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		var stopParams struct {
 			Name string `json:"name"`
 		}
@@ -308,7 +308,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	})
 
 	// Delete workspace
-	server.RegisterHandler("devpod.deleteWorkspace", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_deleteWorkspace", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		var deleteParams struct {
 			Name  string `json:"name"`
 			Force bool   `json:"force,omitempty"`
@@ -341,7 +341,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	})
 
 	// List providers
-	server.RegisterHandler("devpod.listProviders", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_listProviders", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		cmd := exec.CommandContext(ctx, "devpod", "provider", "list", "--output", "json")
 		output, err := cmd.Output()
 		if err != nil {
@@ -360,7 +360,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	})
 
 	// Add provider
-	server.RegisterHandler("devpod.addProvider", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_addProvider", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		var addParams struct {
 			Name    string            `json:"name"`
 			Options map[string]string `json:"options,omitempty"`
@@ -393,7 +393,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	})
 
 	// SSH into workspace
-	server.RegisterHandler("devpod.ssh", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_ssh", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		var sshParams struct {
 			Name    string `json:"name"`
 			Command string `json:"command,omitempty"`
@@ -426,7 +426,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	})
 
 	// Get workspace status
-	server.RegisterHandler("devpod.status", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+	server.RegisterHandler("devpod_status", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		var statusParams struct {
 			Name string `json:"name"`
 		}
@@ -477,7 +477,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 			},
 			// DevPod-specific tools
 			{
-				"name":        "devpod.listWorkspaces",
+				"name":        "devpod_listWorkspaces",
 				"description": "List all DevPod workspaces",
 				"inputSchema": map[string]interface{}{
 					"type":       "object",
@@ -485,7 +485,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod.createWorkspace",
+				"name":        "devpod_createWorkspace",
 				"description": "Create a new DevPod workspace",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
@@ -511,7 +511,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod.startWorkspace",
+				"name":        "devpod_startWorkspace",
 				"description": "Start a DevPod workspace",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
@@ -529,7 +529,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod.stopWorkspace",
+				"name":        "devpod_stopWorkspace",
 				"description": "Stop a DevPod workspace",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
@@ -543,7 +543,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod.deleteWorkspace",
+				"name":        "devpod_deleteWorkspace",
 				"description": "Delete a DevPod workspace",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
@@ -561,7 +561,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod.listProviders",
+				"name":        "devpod_listProviders",
 				"description": "List all DevPod providers",
 				"inputSchema": map[string]interface{}{
 					"type":       "object",
@@ -569,7 +569,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod.addProvider",
+				"name":        "devpod_addProvider",
 				"description": "Add a new DevPod provider",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
@@ -587,7 +587,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod.ssh",
+				"name":        "devpod_ssh",
 				"description": "SSH into a DevPod workspace",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
@@ -605,7 +605,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 				},
 			},
 			{
-				"name":        "devpod.status",
+				"name":        "devpod_status",
 				"description": "Get status of a DevPod workspace",
 				"inputSchema": map[string]interface{}{
 					"type": "object",
