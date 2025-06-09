@@ -22,16 +22,16 @@ var version = "dev"
 
 // DevPodWorkspace represents a DevPod workspace
 type DevPodWorkspace struct {
-	ID                string                 `json:"id"`
-	UID               string                 `json:"uid"`
-	Picture           string                 `json:"picture,omitempty"`
+	ID                string                  `json:"id"`
+	UID               string                  `json:"uid"`
+	Picture           string                  `json:"picture,omitempty"`
 	Provider          DevPodWorkspaceProvider `json:"provider"`
-	Machine           map[string]interface{} `json:"machine"`
-	IDE               DevPodWorkspaceIDE     `json:"ide"`
-	Source            DevPodWorkspaceSource  `json:"source"`
-	CreationTimestamp string                 `json:"creationTimestamp"`
-	LastUsed          string                 `json:"lastUsed"`
-	Context           string                 `json:"context"`
+	Machine           map[string]interface{}  `json:"machine"`
+	IDE               DevPodWorkspaceIDE      `json:"ide"`
+	Source            DevPodWorkspaceSource   `json:"source"`
+	CreationTimestamp string                  `json:"creationTimestamp"`
+	LastUsed          string                  `json:"lastUsed"`
+	Context           string                  `json:"context"`
 }
 
 // DevPodWorkspaceProvider represents the provider configuration for a workspace
@@ -82,38 +82,38 @@ type DevPodProviderState struct {
 func executeDevPodCommandWithDebug(ctx context.Context, args []string) ([]byte, error) {
 	log.Printf("DEBUG: Executing devpod command with args: %v", args)
 	fmt.Fprintf(os.Stderr, "DEBUG: Executing devpod command with args: %v\n", args)
-	
+
 	cmd := exec.CommandContext(ctx, "devpod", args...)
-	
+
 	// Set environment variables
 	cmd.Env = os.Environ()
-	
+
 	// Capture both stdout and stderr separately for better debugging
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	
+
 	err := cmd.Run()
-	
+
 	stdoutBytes := stdout.Bytes()
 	stderrBytes := stderr.Bytes()
 	stdoutStr := string(stdoutBytes)
 	stderrStr := string(stderrBytes)
-	
+
 	log.Printf("DEBUG: Command completed with error: %v", err)
 	log.Printf("DEBUG: Command stdout (%d bytes): %q", len(stdoutBytes), stdoutStr)
 	log.Printf("DEBUG: Command stderr (%d bytes): %q", len(stderrBytes), stderrStr)
-	
+
 	fmt.Fprintf(os.Stderr, "DEBUG: Command completed with error: %v\n", err)
 	fmt.Fprintf(os.Stderr, "DEBUG: Command stdout (%d bytes): %q\n", len(stdoutBytes), stdoutStr)
 	fmt.Fprintf(os.Stderr, "DEBUG: Command stderr (%d bytes): %q\n", len(stderrBytes), stderrStr)
-	
+
 	if err != nil {
 		log.Printf("ERROR: devpod command failed: %v", err)
 		fmt.Fprintf(os.Stderr, "ERROR: devpod command failed: %v\n", err)
 		return nil, fmt.Errorf("devpod command failed: %v, stdout: %s, stderr: %s", err, stdoutStr, stderrStr)
 	}
-	
+
 	log.Printf("DEBUG: Command completed successfully, returning %d bytes", len(stdoutBytes))
 	fmt.Fprintf(os.Stderr, "DEBUG: Command completed successfully, returning %d bytes\n", len(stdoutBytes))
 	return stdoutBytes, nil
@@ -481,13 +481,13 @@ func registerDevPodHandlers(server *mcp.Server) {
 	server.RegisterHandler("devpod_listWorkspaces", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		log.Printf("DEBUG: devpod_listWorkspaces called with params: %s", string(params))
 		fmt.Fprintf(os.Stderr, "DEBUG: devpod_listWorkspaces called with params: %s\n", string(params))
-		
+
 		if !devpodAvailable {
 			log.Printf("ERROR: DevPod is not available on this system")
 			fmt.Fprintf(os.Stderr, "ERROR: DevPod is not available on this system\n")
 			return nil, fmt.Errorf("DevPod is not available on this system")
 		}
-		
+
 		output, err := executeDevPodCommandWithDebug(ctx, []string{"list", "--output", "json"})
 		if err != nil {
 			log.Printf("ERROR: devpod_listWorkspaces failed: %v", err)
@@ -688,7 +688,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 	server.RegisterHandler("devpod_addProvider", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		log.Printf("DEBUG: devpod_addProvider called with params: %s", string(params))
 		fmt.Fprintf(os.Stderr, "DEBUG: devpod_addProvider called with params: %s\n", string(params))
-		
+
 		var addParams struct {
 			Name    string            `json:"name"`
 			Options map[string]string `json:"options,omitempty"`
@@ -726,7 +726,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 			"message": "Provider added successfully",
 			"output":  string(output),
 		}
-		
+
 		log.Printf("DEBUG: devpod_addProvider returning result: %v", result)
 		fmt.Fprintf(os.Stderr, "DEBUG: devpod_addProvider returning result: %v\n", result)
 		fmt.Printf("RESPONSE: devpod_addProvider result: %v\n", result)
