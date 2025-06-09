@@ -35,6 +35,22 @@ type DevPodProvider struct {
 	Default     bool   `json:"default"`
 }
 
+func checkDevPodAvailable() error {
+	log.Printf("Checking DevPod availability...")
+	fmt.Fprintf(os.Stderr, "Checking DevPod availability...\n")
+	
+	cmd := exec.Command("devpod", "version")
+	if err := cmd.Run(); err != nil {
+		log.Printf("DevPod not available: %v", err)
+		fmt.Fprintf(os.Stderr, "DevPod not available: %v\n", err)
+		return fmt.Errorf("DevPod binary not found or not executable: %w", err)
+	}
+	
+	log.Printf("DevPod is available")
+	fmt.Fprintf(os.Stderr, "DevPod is available\n")
+	return nil
+}
+
 func main() {
 	// Add panic recovery to catch any crashes
 	defer func() {
@@ -59,6 +75,13 @@ func main() {
 
 	log.Printf("Starting DevPod MCP server with transport: %s", *transportType)
 	fmt.Fprintf(os.Stderr, "Starting DevPod MCP server with transport: %s\n", *transportType)
+
+	// Check DevPod availability early to provide clear error message
+	if err := checkDevPodAvailable(); err != nil {
+		log.Printf("WARNING: %v", err)
+		fmt.Fprintf(os.Stderr, "WARNING: %v\n", err)
+		fmt.Fprintf(os.Stderr, "DevPod tools will return errors when called\n")
+	}
 
 	// Format address for SSE and HTTP Streams transports
 	var formattedAddr string
@@ -365,10 +388,16 @@ func registerDevPodHandlers(server *mcp.Server) {
 	log.Printf("Registering DevPod handlers")
 	fmt.Fprintf(os.Stderr, "Registering DevPod handlers\n")
 	
+	// Check if DevPod is available (but don't fail registration)
+	devpodAvailable := checkDevPodAvailable() == nil
+	
 	// List workspaces
 	log.Printf("Registering devpod_listWorkspaces handler")
 	fmt.Fprintf(os.Stderr, "Registering devpod_listWorkspaces handler\n")
 	server.RegisterHandler("devpod_listWorkspaces", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		if !devpodAvailable {
+			return nil, fmt.Errorf("DevPod is not available on this system")
+		}
 		cmd := exec.CommandContext(ctx, "devpod", "list", "--output", "json")
 		output, err := cmd.Output()
 		if err != nil {
