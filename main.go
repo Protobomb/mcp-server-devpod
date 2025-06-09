@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -21,18 +22,101 @@ var version = "dev"
 
 // DevPodWorkspace represents a DevPod workspace
 type DevPodWorkspace struct {
-	Name     string `json:"name"`
-	Provider string `json:"provider"`
-	Status   string `json:"status"`
-	IDE      string `json:"ide,omitempty"`
+	ID                string                  `json:"id"`
+	UID               string                  `json:"uid"`
+	Picture           string                  `json:"picture,omitempty"`
+	Provider          DevPodWorkspaceProvider `json:"provider"`
+	Machine           map[string]interface{}  `json:"machine"`
+	IDE               DevPodWorkspaceIDE      `json:"ide"`
+	Source            DevPodWorkspaceSource   `json:"source"`
+	CreationTimestamp string                  `json:"creationTimestamp"`
+	LastUsed          string                  `json:"lastUsed"`
+	Context           string                  `json:"context"`
+}
+
+// DevPodWorkspaceProvider represents the provider configuration for a workspace
+type DevPodWorkspaceProvider struct {
+	Name    string                 `json:"name"`
+	Options map[string]interface{} `json:"options"`
+}
+
+// DevPodWorkspaceIDE represents the IDE configuration for a workspace
+type DevPodWorkspaceIDE struct {
+	Name string `json:"name"`
+}
+
+// DevPodWorkspaceSource represents the source configuration for a workspace
+type DevPodWorkspaceSource struct {
+	Image         string `json:"image,omitempty"`
+	GitRepository string `json:"gitRepository,omitempty"`
 }
 
 // DevPodProvider represents a DevPod provider
 type DevPodProvider struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Version     string `json:"version"`
-	Default     bool   `json:"default"`
+	Config DevPodProviderConfig `json:"config"`
+	State  DevPodProviderState  `json:"state"`
+}
+
+// DevPodProviderConfig represents the configuration of a DevPod provider
+type DevPodProviderConfig struct {
+	Name         string                 `json:"name"`
+	Version      string                 `json:"version"`
+	Description  string                 `json:"description"`
+	Icon         string                 `json:"icon,omitempty"`
+	Home         string                 `json:"home,omitempty"`
+	Source       map[string]interface{} `json:"source"`
+	OptionGroups []interface{}          `json:"optionGroups"`
+	Options      map[string]interface{} `json:"options"`
+	Agent        map[string]interface{} `json:"agent"`
+	Exec         map[string]interface{} `json:"exec"`
+}
+
+// DevPodProviderState represents the state of a DevPod provider
+type DevPodProviderState struct {
+	Initialized       bool                   `json:"initialized"`
+	Options           map[string]interface{} `json:"options"`
+	CreationTimestamp string                 `json:"creationTimestamp"`
+}
+
+// executeDevPodCommandWithDebug executes a DevPod command with comprehensive debug logging
+func executeDevPodCommandWithDebug(ctx context.Context, args []string) ([]byte, error) {
+	log.Printf("DEBUG: Executing devpod command with args: %v", args)
+	fmt.Fprintf(os.Stderr, "DEBUG: Executing devpod command with args: %v\n", args)
+
+	cmd := exec.CommandContext(ctx, "devpod", args...)
+
+	// Set environment variables
+	cmd.Env = os.Environ()
+
+	// Capture both stdout and stderr separately for better debugging
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	stdoutBytes := stdout.Bytes()
+	stderrBytes := stderr.Bytes()
+	stdoutStr := string(stdoutBytes)
+	stderrStr := string(stderrBytes)
+
+	log.Printf("DEBUG: Command completed with error: %v", err)
+	log.Printf("DEBUG: Command stdout (%d bytes): %q", len(stdoutBytes), stdoutStr)
+	log.Printf("DEBUG: Command stderr (%d bytes): %q", len(stderrBytes), stderrStr)
+
+	fmt.Fprintf(os.Stderr, "DEBUG: Command completed with error: %v\n", err)
+	fmt.Fprintf(os.Stderr, "DEBUG: Command stdout (%d bytes): %q\n", len(stdoutBytes), stdoutStr)
+	fmt.Fprintf(os.Stderr, "DEBUG: Command stderr (%d bytes): %q\n", len(stderrBytes), stderrStr)
+
+	if err != nil {
+		log.Printf("ERROR: devpod command failed: %v", err)
+		fmt.Fprintf(os.Stderr, "ERROR: devpod command failed: %v\n", err)
+		return nil, fmt.Errorf("devpod command failed: %v, stdout: %s, stderr: %s", err, stdoutStr, stderrStr)
+	}
+
+	log.Printf("DEBUG: Command completed successfully, returning %d bytes", len(stdoutBytes))
+	fmt.Fprintf(os.Stderr, "DEBUG: Command completed successfully, returning %d bytes\n", len(stdoutBytes))
+	return stdoutBytes, nil
 }
 
 func checkDevPodAvailable() error {
@@ -395,24 +479,44 @@ func registerDevPodHandlers(server *mcp.Server) {
 	log.Printf("Registering devpod_listWorkspaces handler")
 	fmt.Fprintf(os.Stderr, "Registering devpod_listWorkspaces handler\n")
 	server.RegisterHandler("devpod_listWorkspaces", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		log.Printf("DEBUG: devpod_listWorkspaces called with params: %s", string(params))
+		fmt.Fprintf(os.Stderr, "DEBUG: devpod_listWorkspaces called with params: %s\n", string(params))
+
 		if !devpodAvailable {
+			log.Printf("ERROR: DevPod is not available on this system")
+			fmt.Fprintf(os.Stderr, "ERROR: DevPod is not available on this system\n")
 			return nil, fmt.Errorf("DevPod is not available on this system")
 		}
-		cmd := exec.CommandContext(ctx, "devpod", "list", "--output", "json")
-		output, err := cmd.Output()
+
+		output, err := executeDevPodCommandWithDebug(ctx, []string{"list", "--output", "json"})
 		if err != nil {
+			log.Printf("ERROR: devpod_listWorkspaces failed: %v", err)
+			fmt.Fprintf(os.Stderr, "ERROR: devpod_listWorkspaces failed: %v\n", err)
 			return nil, fmt.Errorf("failed to list workspaces: %w", err)
 		}
 
 		var workspaces []DevPodWorkspace
 		if err := json.Unmarshal(output, &workspaces); err != nil {
+			log.Printf("DEBUG: JSON parsing failed, trying text parsing. Error: %v", err)
+			fmt.Fprintf(os.Stderr, "DEBUG: JSON parsing failed, trying text parsing. Error: %v\n", err)
 			// If JSON parsing fails, try to parse the text output
-			return parseTextWorkspaceList(string(output)), nil
+			textResult := parseTextWorkspaceList(string(output))
+			result := map[string]interface{}{
+				"workspaces": textResult,
+			}
+			log.Printf("DEBUG: devpod_listWorkspaces returning text-parsed result: %v", result)
+			fmt.Fprintf(os.Stderr, "DEBUG: devpod_listWorkspaces returning text-parsed result: %v\n", result)
+			fmt.Printf("RESPONSE: devpod_listWorkspaces text-parsed result: %v\n", result)
+			return result, nil
 		}
 
-		return map[string]interface{}{
+		result := map[string]interface{}{
 			"workspaces": workspaces,
-		}, nil
+		}
+		log.Printf("DEBUG: devpod_listWorkspaces returning JSON-parsed result: %v", result)
+		fmt.Fprintf(os.Stderr, "DEBUG: devpod_listWorkspaces returning JSON-parsed result: %v\n", result)
+		fmt.Printf("RESPONSE: devpod_listWorkspaces result: %v\n", result)
+		return result, nil
 	})
 
 	// Create workspace
@@ -548,35 +652,57 @@ func registerDevPodHandlers(server *mcp.Server) {
 
 	// List providers
 	server.RegisterHandler("devpod_listProviders", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
-		cmd := exec.CommandContext(ctx, "devpod", "provider", "list", "--output", "json")
-		output, err := cmd.Output()
+		output, err := executeDevPodCommandWithDebug(ctx, []string{"provider", "list", "--output", "json"})
 		if err != nil {
+			log.Printf("ERROR: devpod_listProviders failed: %v", err)
+			fmt.Fprintf(os.Stderr, "ERROR: devpod_listProviders failed: %v\n", err)
 			return nil, fmt.Errorf("failed to list providers: %w", err)
 		}
 
-		var providers []DevPodProvider
-		if err := json.Unmarshal(output, &providers); err != nil {
+		// DevPod provider list returns an object with provider names as keys
+		var providersMap map[string]DevPodProvider
+		if err := json.Unmarshal(output, &providersMap); err != nil {
+			log.Printf("DEBUG: JSON parsing failed, trying text parsing. Error: %v", err)
+			fmt.Fprintf(os.Stderr, "DEBUG: JSON parsing failed, trying text parsing. Error: %v\n", err)
 			// If JSON parsing fails, try to parse the text output
-			return parseTextProviderList(string(output)), nil
+			textResult := parseTextProviderList(string(output))
+			result := map[string]interface{}{
+				"providers": textResult,
+			}
+			log.Printf("DEBUG: devpod_listProviders returning text-parsed result: %v", result)
+			fmt.Fprintf(os.Stderr, "DEBUG: devpod_listProviders returning text-parsed result: %v\n", result)
+			fmt.Printf("RESPONSE: devpod_listProviders text-parsed result: %v\n", result)
+			return result, nil
 		}
 
-		return map[string]interface{}{
-			"providers": providers,
-		}, nil
+		result := map[string]interface{}{
+			"providers": providersMap,
+		}
+		log.Printf("DEBUG: devpod_listProviders returning JSON-parsed result: %v", result)
+		fmt.Fprintf(os.Stderr, "DEBUG: devpod_listProviders returning JSON-parsed result: %v\n", result)
+		fmt.Printf("RESPONSE: devpod_listProviders result: %v\n", result)
+		return result, nil
 	})
 
 	// Add provider
 	server.RegisterHandler("devpod_addProvider", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
+		log.Printf("DEBUG: devpod_addProvider called with params: %s", string(params))
+		fmt.Fprintf(os.Stderr, "DEBUG: devpod_addProvider called with params: %s\n", string(params))
+
 		var addParams struct {
 			Name    string            `json:"name"`
 			Options map[string]string `json:"options,omitempty"`
 		}
 
 		if err := json.Unmarshal(params, &addParams); err != nil {
+			log.Printf("ERROR: Failed to unmarshal addProvider params: %v", err)
+			fmt.Fprintf(os.Stderr, "ERROR: Failed to unmarshal addProvider params: %v\n", err)
 			return nil, mcp.NewInvalidParamsError("Invalid add provider parameters")
 		}
 
 		if addParams.Name == "" {
+			log.Printf("ERROR: Provider name is required")
+			fmt.Fprintf(os.Stderr, "ERROR: Provider name is required\n")
 			return nil, mcp.NewInvalidParamsError("Provider name is required")
 		}
 
@@ -585,17 +711,26 @@ func registerDevPodHandlers(server *mcp.Server) {
 			args = append(args, "-o", fmt.Sprintf("%s=%s", key, value))
 		}
 
-		cmd := exec.CommandContext(ctx, "devpod", args...)
-		output, err := cmd.CombinedOutput()
+		log.Printf("DEBUG: Executing devpod provider add with args: %v", args)
+		fmt.Fprintf(os.Stderr, "DEBUG: Executing devpod provider add with args: %v\n", args)
+
+		output, err := executeDevPodCommandWithDebug(ctx, args)
 		if err != nil {
+			log.Printf("ERROR: devpod_addProvider failed: %v", err)
+			fmt.Fprintf(os.Stderr, "ERROR: devpod_addProvider failed: %v\n", err)
 			return nil, fmt.Errorf("failed to add provider: %w\nOutput: %s", err, string(output))
 		}
 
-		return map[string]interface{}{
+		result := map[string]interface{}{
 			"name":    addParams.Name,
 			"message": "Provider added successfully",
 			"output":  string(output),
-		}, nil
+		}
+
+		log.Printf("DEBUG: devpod_addProvider returning result: %v", result)
+		fmt.Fprintf(os.Stderr, "DEBUG: devpod_addProvider returning result: %v\n", result)
+		fmt.Printf("RESPONSE: devpod_addProvider result: %v\n", result)
+		return result, nil
 	})
 
 	// SSH into workspace
