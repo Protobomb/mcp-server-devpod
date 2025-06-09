@@ -53,10 +53,29 @@ type DevPodWorkspaceSource struct {
 
 // DevPodProvider represents a DevPod provider
 type DevPodProvider struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Version     string `json:"version"`
-	Default     bool   `json:"default"`
+	Config DevPodProviderConfig `json:"config"`
+	State  DevPodProviderState  `json:"state"`
+}
+
+// DevPodProviderConfig represents the configuration of a DevPod provider
+type DevPodProviderConfig struct {
+	Name         string                 `json:"name"`
+	Version      string                 `json:"version"`
+	Description  string                 `json:"description"`
+	Icon         string                 `json:"icon,omitempty"`
+	Home         string                 `json:"home,omitempty"`
+	Source       map[string]interface{} `json:"source"`
+	OptionGroups []interface{}          `json:"optionGroups"`
+	Options      map[string]interface{} `json:"options"`
+	Agent        map[string]interface{} `json:"agent"`
+	Exec         map[string]interface{} `json:"exec"`
+}
+
+// DevPodProviderState represents the state of a DevPod provider
+type DevPodProviderState struct {
+	Initialized       bool                   `json:"initialized"`
+	Options           map[string]interface{} `json:"options"`
+	CreationTimestamp string                 `json:"creationTimestamp"`
 }
 
 // executeDevPodCommandWithDebug executes a DevPod command with comprehensive debug logging
@@ -481,19 +500,23 @@ func registerDevPodHandlers(server *mcp.Server) {
 			log.Printf("DEBUG: JSON parsing failed, trying text parsing. Error: %v", err)
 			fmt.Fprintf(os.Stderr, "DEBUG: JSON parsing failed, trying text parsing. Error: %v\n", err)
 			// If JSON parsing fails, try to parse the text output
-			result := parseTextWorkspaceList(string(output))
+			textResult := parseTextWorkspaceList(string(output))
+			result := map[string]interface{}{
+				"workspaces": textResult,
+			}
 			log.Printf("DEBUG: devpod_listWorkspaces returning text-parsed result: %v", result)
 			fmt.Fprintf(os.Stderr, "DEBUG: devpod_listWorkspaces returning text-parsed result: %v\n", result)
-			return map[string]interface{}{
-				"workspaces": result,
-			}, nil
+			fmt.Printf("RESPONSE: devpod_listWorkspaces text-parsed result: %v\n", result)
+			return result, nil
 		}
 
-		log.Printf("DEBUG: devpod_listWorkspaces returning JSON-parsed result: %v", workspaces)
-		fmt.Fprintf(os.Stderr, "DEBUG: devpod_listWorkspaces returning JSON-parsed result: %v\n", workspaces)
-		return map[string]interface{}{
+		result := map[string]interface{}{
 			"workspaces": workspaces,
-		}, nil
+		}
+		log.Printf("DEBUG: devpod_listWorkspaces returning JSON-parsed result: %v", result)
+		fmt.Fprintf(os.Stderr, "DEBUG: devpod_listWorkspaces returning JSON-parsed result: %v\n", result)
+		fmt.Printf("RESPONSE: devpod_listWorkspaces result: %v\n", result)
+		return result, nil
 	})
 
 	// Create workspace
@@ -629,21 +652,36 @@ func registerDevPodHandlers(server *mcp.Server) {
 
 	// List providers
 	server.RegisterHandler("devpod_listProviders", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
-		cmd := exec.CommandContext(ctx, "devpod", "provider", "list", "--output", "json")
-		output, err := cmd.Output()
+		output, err := executeDevPodCommandWithDebug(ctx, []string{"provider", "list", "--output", "json"})
 		if err != nil {
+			log.Printf("ERROR: devpod_listProviders failed: %v", err)
+			fmt.Fprintf(os.Stderr, "ERROR: devpod_listProviders failed: %v\n", err)
 			return nil, fmt.Errorf("failed to list providers: %w", err)
 		}
 
-		var providers []DevPodProvider
-		if err := json.Unmarshal(output, &providers); err != nil {
+		// DevPod provider list returns an object with provider names as keys
+		var providersMap map[string]DevPodProvider
+		if err := json.Unmarshal(output, &providersMap); err != nil {
+			log.Printf("DEBUG: JSON parsing failed, trying text parsing. Error: %v", err)
+			fmt.Fprintf(os.Stderr, "DEBUG: JSON parsing failed, trying text parsing. Error: %v\n", err)
 			// If JSON parsing fails, try to parse the text output
-			return parseTextProviderList(string(output)), nil
+			textResult := parseTextProviderList(string(output))
+			result := map[string]interface{}{
+				"providers": textResult,
+			}
+			log.Printf("DEBUG: devpod_listProviders returning text-parsed result: %v", result)
+			fmt.Fprintf(os.Stderr, "DEBUG: devpod_listProviders returning text-parsed result: %v\n", result)
+			fmt.Printf("RESPONSE: devpod_listProviders text-parsed result: %v\n", result)
+			return result, nil
 		}
 
-		return map[string]interface{}{
-			"providers": providers,
-		}, nil
+		result := map[string]interface{}{
+			"providers": providersMap,
+		}
+		log.Printf("DEBUG: devpod_listProviders returning JSON-parsed result: %v", result)
+		fmt.Fprintf(os.Stderr, "DEBUG: devpod_listProviders returning JSON-parsed result: %v\n", result)
+		fmt.Printf("RESPONSE: devpod_listProviders result: %v\n", result)
+		return result, nil
 	})
 
 	// Add provider
@@ -691,6 +729,7 @@ func registerDevPodHandlers(server *mcp.Server) {
 		
 		log.Printf("DEBUG: devpod_addProvider returning result: %v", result)
 		fmt.Fprintf(os.Stderr, "DEBUG: devpod_addProvider returning result: %v\n", result)
+		fmt.Printf("RESPONSE: devpod_addProvider result: %v\n", result)
 		return result, nil
 	})
 
