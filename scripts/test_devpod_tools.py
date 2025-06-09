@@ -184,15 +184,15 @@ class DevPodToolTester:
         if "result" in response and "tools" in response["result"]:
             tools = response["result"]["tools"]
             expected_tools = [
-                "devpod.listWorkspaces",
-                "devpod.createWorkspace", 
-                "devpod.startWorkspace",
-                "devpod.stopWorkspace",
-                "devpod.deleteWorkspace",
-                "devpod.listProviders",
-                "devpod.addProvider",
-                "devpod.ssh",
-                "devpod.status"
+                "devpod_listWorkspaces",
+                "devpod_createWorkspace", 
+                "devpod_startWorkspace",
+                "devpod_stopWorkspace",
+                "devpod_deleteWorkspace",
+                "devpod_listProviders",
+                "devpod_addProvider",
+                "devpod_ssh",
+                "devpod_status"
             ]
             
             tool_names = [tool["name"] for tool in tools]
@@ -209,11 +209,11 @@ class DevPodToolTester:
             return False
             
     def test_list_workspaces(self) -> bool:
-        """Test devpod.listWorkspaces tool"""
-        print("🏢 Testing devpod.listWorkspaces...")
+        """Test devpod_listWorkspaces tool"""
+        print("🏢 Testing devpod_listWorkspaces...")
         
         response = self.send_request("tools/call", {
-            "name": "devpod.listWorkspaces",
+            "name": "devpod_listWorkspaces",
             "arguments": {}
         })
         
@@ -230,11 +230,11 @@ class DevPodToolTester:
             return False
             
     def test_list_providers(self) -> bool:
-        """Test devpod.listProviders tool"""
-        print("🔌 Testing devpod.listProviders...")
+        """Test devpod_listProviders tool"""
+        print("🔌 Testing devpod_listProviders...")
         
         response = self.send_request("tools/call", {
-            "name": "devpod.listProviders", 
+            "name": "devpod_listProviders", 
             "arguments": {}
         })
         
@@ -251,12 +251,12 @@ class DevPodToolTester:
             return False
             
     def test_workspace_status(self) -> bool:
-        """Test devpod.status tool"""
-        print("📊 Testing devpod.status...")
+        """Test devpod_status tool"""
+        print("📊 Testing devpod_status...")
         
         # Test with a non-existent workspace (should handle gracefully)
         response = self.send_request("tools/call", {
-            "name": "devpod.status",
+            "name": "devpod_status",
             "arguments": {"name": "test-workspace-nonexistent"}
         })
         
@@ -273,12 +273,12 @@ class DevPodToolTester:
             return False
             
     def test_create_workspace_validation(self) -> bool:
-        """Test devpod.createWorkspace input validation"""
-        print("🏗️ Testing devpod.createWorkspace validation...")
+        """Test devpod_createWorkspace input validation"""
+        print("🏗️ Testing devpod_createWorkspace validation...")
         
         # Test with missing required parameters
         response = self.send_request("tools/call", {
-            "name": "devpod.createWorkspace",
+            "name": "devpod_createWorkspace",
             "arguments": {"name": "test-workspace"}  # Missing 'source'
         })
         
@@ -291,12 +291,12 @@ class DevPodToolTester:
             return False
             
     def test_start_workspace_validation(self) -> bool:
-        """Test devpod.startWorkspace input validation"""
-        print("▶️ Testing devpod.startWorkspace validation...")
+        """Test devpod_startWorkspace input validation"""
+        print("▶️ Testing devpod_startWorkspace validation...")
         
         # Test with non-existent workspace
         response = self.send_request("tools/call", {
-            "name": "devpod.startWorkspace",
+            "name": "devpod_startWorkspace",
             "arguments": {"name": "nonexistent-workspace"}
         })
         
@@ -309,12 +309,12 @@ class DevPodToolTester:
             return False
             
     def test_stop_workspace_validation(self) -> bool:
-        """Test devpod.stopWorkspace input validation"""
-        print("⏹️ Testing devpod.stopWorkspace validation...")
+        """Test devpod_stopWorkspace input validation"""
+        print("⏹️ Testing devpod_stopWorkspace validation...")
         
         # Test with non-existent workspace
         response = self.send_request("tools/call", {
-            "name": "devpod.stopWorkspace",
+            "name": "devpod_stopWorkspace",
             "arguments": {"name": "nonexistent-workspace"}
         })
         
@@ -327,12 +327,12 @@ class DevPodToolTester:
             return False
             
     def test_delete_workspace_validation(self) -> bool:
-        """Test devpod.deleteWorkspace input validation"""
-        print("🗑️ Testing devpod.deleteWorkspace validation...")
+        """Test devpod_deleteWorkspace input validation"""
+        print("🗑️ Testing devpod_deleteWorkspace validation...")
         
         # Test with non-existent workspace
         response = self.send_request("tools/call", {
-            "name": "devpod.deleteWorkspace",
+            "name": "devpod_deleteWorkspace",
             "arguments": {"name": "nonexistent-workspace", "force": True}
         })
         
@@ -345,12 +345,12 @@ class DevPodToolTester:
             return False
             
     def test_add_provider_validation(self) -> bool:
-        """Test devpod.addProvider input validation"""
-        print("➕ Testing devpod.addProvider validation...")
+        """Test devpod_addProvider input validation"""
+        print("➕ Testing devpod_addProvider validation...")
         
         # Test with minimal valid parameters
         response = self.send_request("tools/call", {
-            "name": "devpod.addProvider",
+            "name": "devpod_addProvider",
             "arguments": {"name": "test-provider"}
         })
         
@@ -363,12 +363,12 @@ class DevPodToolTester:
             return False
             
     def test_ssh_validation(self) -> bool:
-        """Test devpod.ssh input validation"""
-        print("🔐 Testing devpod.ssh validation...")
+        """Test devpod_ssh input validation"""
+        print("🔐 Testing devpod_ssh validation...")
         
         # Test with non-existent workspace
         response = self.send_request("tools/call", {
-            "name": "devpod.ssh",
+            "name": "devpod_ssh",
             "arguments": {"name": "nonexistent-workspace", "command": "echo 'test'"}
         })
         
@@ -385,7 +385,7 @@ class DevPodToolTester:
         print("❓ Testing invalid tool call...")
         
         response = self.send_request("tools/call", {
-            "name": "devpod.invalidTool",
+            "name": "devpod_invalidTool",
             "arguments": {}
         })
         

@@ -122,7 +122,7 @@ curl -X POST http://localhost:8080/sse \
     "id": 3,
     "method": "tools/call",
     "params": {
-      "name": "devpod.listWorkspaces",
+      "name": "devpod_listWorkspaces",
       "arguments": {}
     }
   }'

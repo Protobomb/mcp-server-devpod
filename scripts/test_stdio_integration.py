@@ -254,13 +254,13 @@ def test_mcp_workflow(server_binary=None):
             "id": 5,
             "method": "tools/call",
             "params": {
-                "name": "devpod.listWorkspaces",
+                "name": "devpod_listWorkspaces",
                 "arguments": {}
             }
         }
         
         if not client.send_message(list_workspaces_message):
-            print("❌ Failed to send devpod.listWorkspaces message")
+            print("❌ Failed to send devpod_listWorkspaces message")
             return False
         
         response = client.wait_for_response(timeout=10)
@@ -277,13 +277,13 @@ def test_mcp_workflow(server_binary=None):
             "id": 6,
             "method": "tools/call",
             "params": {
-                "name": "devpod.listProviders",
+                "name": "devpod_listProviders",
                 "arguments": {}
             }
         }
         
         if not client.send_message(list_providers_message):
-            print("❌ Failed to send devpod.listProviders message")
+            print("❌ Failed to send devpod_listProviders message")
             return False
         
         response = client.wait_for_response(timeout=10)
@@ -300,7 +300,7 @@ def test_mcp_workflow(server_binary=None):
             "id": 7,
             "method": "tools/call",
             "params": {
-                "name": "devpod.status",
+                "name": "devpod_status",
                 "arguments": {
                     "name": "test-workspace"
                 }
@@ -308,7 +308,7 @@ def test_mcp_workflow(server_binary=None):
         }
         
         if not client.send_message(status_message):
-            print("❌ Failed to send devpod.status message")
+            print("❌ Failed to send devpod_status message")
             return False
         
         response = client.wait_for_response(timeout=10)
@@ -327,7 +327,7 @@ def test_mcp_workflow(server_binary=None):
             "id": 8,
             "method": "tools/call",
             "params": {
-                "name": "devpod.createWorkspace",
+                "name": "devpod_createWorkspace",
                 "arguments": {
                     "name": "test-workspace-validation",
                     "source": "https://github.com/example/repo"
@@ -336,7 +336,7 @@ def test_mcp_workflow(server_binary=None):
         }
         
         if not client.send_message(create_workspace_message):
-            print("❌ Failed to send devpod.createWorkspace message")
+            print("❌ Failed to send devpod_createWorkspace message")
             return False
         
         response = client.wait_for_response(timeout=15)
@@ -376,7 +376,7 @@ def test_mcp_workflow(server_binary=None):
             "id": 10,
             "method": "tools/call",
             "params": {
-                "name": "devpod.status",
+                "name": "devpod_status",
                 "arguments": {}  # Missing required 'name' argument
             }
         }

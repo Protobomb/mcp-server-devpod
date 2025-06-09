@@ -279,7 +279,7 @@ def test_mcp_workflow(base_url=None):
             "id": 5,
             "method": "tools/call",
             "params": {
-                "name": "devpod.listWorkspaces",
+                "name": "devpod_listWorkspaces",
                 "arguments": {}
             }
         }
@@ -302,7 +302,7 @@ def test_mcp_workflow(base_url=None):
             "id": 6,
             "method": "tools/call",
             "params": {
-                "name": "devpod.listProviders",
+                "name": "devpod_listProviders",
                 "arguments": {}
             }
         }
@@ -325,7 +325,7 @@ def test_mcp_workflow(base_url=None):
             "id": 7,
             "method": "tools/call",
             "params": {
-                "name": "devpod.status",
+                "name": "devpod_status",
                 "arguments": {
                     "name": "test-workspace"
                 }
@@ -352,7 +352,7 @@ def test_mcp_workflow(base_url=None):
             "id": 8,
             "method": "tools/call",
             "params": {
-                "name": "devpod.createWorkspace",
+                "name": "devpod_createWorkspace",
                 "arguments": {
                     "name": "test-workspace-sse",
                     "source": "https://github.com/example/repo"
@@ -402,7 +402,7 @@ def test_mcp_workflow(base_url=None):
             "id": 10,
             "method": "tools/call",
             "params": {
-                "name": "devpod.status",
+                "name": "devpod_status",
                 "arguments": {}  # Missing required 'name' argument
             }
         }

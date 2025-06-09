@@ -124,7 +124,7 @@ We have successfully upgraded the mcp-server-devpod from the development version
 - **Pull Request**: https://github.com/Protobomb/mcp-server-devpod/pull/3
 - **Framework v1.0.0**: https://github.com/Protobomb/mcp-server-framework/releases/tag/v1.0.0
 - **Framework Documentation**: https://github.com/Protobomb/mcp-server-framework/tree/main/docs
-- **DevPod Documentation**: https://devpod.sh/docs
+- **DevPod Documentation**: https://devpod_sh/docs
 
 ---
 
