@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "devpod": {
+      "command": "/workspace/mcp-server-devpod/mcp-server-devpod-claude-desktop",
+      "args": ["--transport", "stdio"],
+      "env": {}
+    }
+  }
+}

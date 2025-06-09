@@ -38,14 +38,14 @@ type DevPodProvider struct {
 func checkDevPodAvailable() error {
 	log.Printf("Checking DevPod availability...")
 	fmt.Fprintf(os.Stderr, "Checking DevPod availability...\n")
-
+	
 	cmd := exec.Command("devpod", "version")
 	if err := cmd.Run(); err != nil {
 		log.Printf("DevPod not available: %v", err)
 		fmt.Fprintf(os.Stderr, "DevPod not available: %v\n", err)
 		return fmt.Errorf("DevPod binary not found or not executable: %w", err)
 	}
-
+	
 	log.Printf("DevPod is available")
 	fmt.Fprintf(os.Stderr, "DevPod is available\n")
 	return nil
@@ -387,10 +387,10 @@ func registerMCPHandlers(server *mcp.Server) {
 func registerDevPodHandlers(server *mcp.Server) {
 	log.Printf("Registering DevPod handlers")
 	fmt.Fprintf(os.Stderr, "Registering DevPod handlers\n")
-
+	
 	// Check if DevPod is available (but don't fail registration)
 	devpodAvailable := checkDevPodAvailable() == nil
-
+	
 	// List workspaces
 	log.Printf("Registering devpod_listWorkspaces handler")
 	fmt.Fprintf(os.Stderr, "Registering devpod_listWorkspaces handler\n")
