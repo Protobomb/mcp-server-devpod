@@ -592,8 +592,6 @@ func registerDevPodHandlers(server *mcp.Server) {
 		return status, nil
 	})
 
-
-
 	// Custom tools/call handler to route tool calls to our DevPod handlers
 	server.RegisterHandler("tools/call", func(ctx context.Context, params json.RawMessage) (interface{}, error) {
 		var callParams struct {
